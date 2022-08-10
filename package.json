@@ -6,16 +6,40 @@
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "bootstrap-icons": "^1.8.3",
+    "electron-squirrel-startup": "^1.0.0",
+    "fs": "^0.0.1-security",
+    "node-downloader-helper": "^2.1.1",
+    "path": "^0.12.7",
+    "pdf-page-counter": "^1.0.3",
+    "pdf-to-printer": "^5.3.0",
+    "pdf2pic": "^2.1.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
+    "react-router-dom": "^6.3.0",
+    "react-scripts": "^5.0.1",
+    "reactjs-popup": "^2.0.5",
+    "request-promise-native": "^1.0.9",
+    "unix-print": "^1.1.0",
     "web-vitals": "^2.1.4"
   },
+  "resolutions": {
+    "react-error-overlay": "6.0.9"
+  },
+  "main": "app.js",
+  "homepage": "./",
   "scripts": {
-    "start": "react-scripts start",
+    "start": "electron-forge start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "dev": "concurrently -k \"BROWSER=none npm start\" \"npm:electron\"",
+    "electron": "while ! bash -c \"echo > /dev/tcp/localhost/3000\"; do sleep 1; done; electron .",
+    "preinstall": "npx npm-force-resolutions",
+    "postinstall": "electron-rebuild",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "build-electron": "mkdir build/src && cp -r electron/. build/electron && cp -r src/shared/. build/src/shared"
   },
   "eslintConfig": {
     "extends": [
@@ -34,5 +58,47 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^6.0.0-beta.65",
+    "@electron-forge/maker-deb": "^6.0.0-beta.65",
+    "@electron-forge/maker-rpm": "^6.0.0-beta.65",
+    "@electron-forge/maker-squirrel": "^6.0.0-beta.65",
+    "@electron-forge/maker-zip": "^6.0.0-beta.65",
+    "autoprefixer": "^10.4.7",
+    "concurrently": "^7.2.2",
+    "electron": "^19.0.6",
+    "electron-is-dev": "^2.0.0",
+    "electron-rebuild": "^3.2.8",
+    "postcss": "^8.4.14",
+    "tailwindcss": "^3.1.4",
+    "wait-on": "^6.0.1"
+  },
+  "config": {
+    "forge": {
+      "packagerConfig": {},
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "shipping"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {}
+        },
+        {
+          "name": "@electron-forge/maker-rpm",
+          "config": {}
+        }
+      ]
+    }
   }
 }
