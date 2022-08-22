@@ -3,6 +3,10 @@ import React from 'react'
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// Img imports
+import computerIconWhiteLines from "../images/computerIconWhiteLines.png"
+import logoDark from "../images/logo-dark.png"
+
 const SignInPage = ({ setUser }) => {
 
     // Component States
@@ -64,7 +68,7 @@ const SignInPage = ({ setUser }) => {
     return (
     <div className='relative w-screen h-screen'>
         <div className="w-full h-full">
-            <img src="/images/logo-dark.png" alt="" className="absolute left-8 top-8 h-10" />
+            <img src={logoDark} alt="" className="absolute left-8 top-8 h-10" />
             <form className='left-40 absolute top-60' onSubmit={login}>
                 <h3 className="text-3xl w-full font-semibold">Sign In</h3>
                 <ul className={`list-none bg-red-400 text-white p-3 rounded w-full my-2 ${!loginFormError && "hidden" }`}>{loginFormError}</ul>
@@ -79,7 +83,7 @@ const SignInPage = ({ setUser }) => {
             <h3 className="top-40 right-40 absolute text-white text-4xl max-w-md text-center tracking-wider">
                 All orders in one place for you and your team
             </h3>
-            <img src="/images/computerIconWhiteLines.png" className='w-80 h-80 absolute right-56 top-80' alt="" />
+            <img src={computerIconWhiteLines} className='w-80 h-80 absolute right-56 top-80' alt="" />
         </div>
     </div>
     )

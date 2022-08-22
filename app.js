@@ -8,8 +8,8 @@ const unixPrint = require("unix-print");
 const windowsPrint = require("pdf-to-printer");
 
 // Electron Imports
-const { app, BrowserWindow, ipcMain } = require('electron');
-const isDev = require('electron-is-dev');
+const { app, BrowserWindow, ipcMain, Notification } = require('electron');
+const isDev = false;
 
 // Create window once Electron has been initialized
 app.whenReady().then(createWindow);
@@ -46,7 +46,7 @@ function createWindow() {
   win.loadURL(
     isDev
       ? 'http://localhost:3000/scan'
-      : `file://${path.join(__dirname, '../build/index.html')}`
+      : `file://${path.join(__dirname, 'build/index.html#/scan')}`
   );
 
 
@@ -75,6 +75,8 @@ function createWindow() {
       // Print label if it's a windows
       if (process.platform === "win32") {
 
+        new Notification({ title: "Printing Label...Windows", body: "should be printing"}).show()
+
         // Set Printing Options
         const printingOptions = {
           silent: true
@@ -83,7 +85,11 @@ function createWindow() {
           printingOptions.printer = printData.printerName; 
         }
 
-       await  windowsPrint.print("temporary-label.pdf", printingOptions);
+        // log printData
+        new Notification({ title: "Print Data", body: JSON.stringify(printData)}).show()
+
+
+       await windowsPrint.print("temporary-label.pdf", printingOptions);
       }
 
 

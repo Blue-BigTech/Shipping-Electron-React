@@ -5,6 +5,9 @@ import 'reactjs-popup/dist/index.css';
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 
+// Img Imports
+import computerIconBlueLines from "../images/computerIconBlueLines.png"
+
 const ScanATotePage = ({ user }) => {
 
     // Init Navigate
@@ -35,6 +38,7 @@ const ScanATotePage = ({ user }) => {
             })
         })
 
+        
         if (!res.ok) {
             const errorRes = await res.json();
             const errorMessage = errorRes.error;
@@ -47,7 +51,7 @@ const ScanATotePage = ({ user }) => {
         const lockedOrder = await res.json();
 
         // If order is already locked, navigate there
-        if (lockedOrder.ID) {
+        if (lockedOrder && lockedOrder.ID) {
             navigate(`/order?order_id=${lockedOrder.ID}`)
         }
 
@@ -134,7 +138,7 @@ const ScanATotePage = ({ user }) => {
                 </div>
             )}
             </Popup>
-            <img src="/images/computerIconBlueLines.png" alt="" className='w-80 mt-20' />
+            <img src={computerIconBlueLines} alt="" className='w-80 mt-20' />
             <div className="absolute bg-blue-500 w-96 h-96 left-0 top-56" style={{clipPath: "ellipse(35% 50% at left)", width: "600px", height: "500px"}}></div>
         </div>
     )

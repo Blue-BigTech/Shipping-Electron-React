@@ -10,8 +10,11 @@ import Error from '../components/Error';
 import Loading from '../components/Loading';
 import Popup from 'reactjs-popup';
 
+// Img imports
+import sockImage from "../images/sockImage.png"
+
 // Electron imports
-const { ipcRenderer } = window.require("electron");
+const { ipcRenderer, shell } = window.require("electron");
 
 
 const OrderPage = ({user}) => {
@@ -44,6 +47,9 @@ const OrderPage = ({user}) => {
     const [shipmentsLoading, setShipmentsLoading] = useState(false);
     const [shipments, setShipments] = useState(null);
 
+    // Flag for error state
+    const [flaggedError, setFlaggedError] = useState("");
+
     // Use Search Params
     const [searchParams] = useSearchParams();
 
@@ -51,6 +57,8 @@ const OrderPage = ({user}) => {
 
     // Get Initial Data On Page Load Function
     useEffect(() => {
+
+        
 
         // Get Initial Data On Page Load Function
         async function getInitialPageData () {
@@ -193,6 +201,10 @@ const OrderPage = ({user}) => {
             const errorRes = await res.json();
             const errorMessage = errorRes.error;
             setOrderError(errorMessage)
+
+            // unlock order
+            postUnlockOrder(orderID)
+
             return
         }
 
@@ -332,7 +344,7 @@ const OrderPage = ({user}) => {
                 "X-Real-IP": process.env.REACT_APP_HQ_SHIPPING_X_REAL_IP
             },
             body: JSON.stringify({
-                order_id: orderID,
+                order_id: parseInt(orderID),
                 user_id: user.ID
             })
         })
@@ -372,7 +384,6 @@ const OrderPage = ({user}) => {
             return
         }
 
-        // Parse and return Label Response
         const labelRes = await res.json()
         return labelRes.URL;
 
@@ -539,6 +550,46 @@ const OrderPage = ({user}) => {
         // Parse and return Label Response
         const labelRes = await res.json()
         return labelRes.label_url;
+
+    }
+
+    // Make Request to flag for error
+    const postFlagError = async (orderID, errorMessage) => {
+        
+        // Parameter Validation
+        if (!orderID) {
+            setOrderError("Uh oh, unable to flag error without orderID parameter.");
+            return;
+        }
+
+        if (!errorMessage) {
+            setOrderError("Uh oh, unable to flag error without errorMessage parameter.");
+            return;
+        }
+
+        // Make Request to flag error
+        const res = await fetch(`${process.env.REACT_APP_HQ_SHIPPING_ADDRESS}/report-error`, {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "X-API": process.env.REACT_APP_HQ_SHIPPING_X_API_KEY,
+                "X-Real-IP": process.env.REACT_APP_HQ_SHIPPING_X_REAL_IP
+            },
+            body: JSON.stringify({
+                order_id: parseInt(orderID),
+                user_id: parseInt(user.ID),
+                error_note: errorMessage
+            })
+
+        })
+
+        // Error Handle Response
+        if (!res.ok) {
+            const errorRes = await res.json();
+            const errorMessage = errorRes.error;
+            setOrderError(errorMessage)
+            return
+        }
 
     }
 
@@ -780,7 +831,74 @@ const OrderPage = ({user}) => {
     // Handles a barcode scan
     const handleBarcodeScan = async (scannedCode, currentOrderItemsPackedStatus) => {
 
-        // find order item packed status
+        // handle if barcode scan is bx_
+        if (scannedCode.startsWith("bx_")) {
+            
+            // Get Box ID
+            const boxID = scannedCode.split("_")[1];
+            
+            setOrderBoxID(boxID);
+
+            return;
+        }
+
+        // handle if barcode scan is hs_
+        if (scannedCode.startsWith("hs_")) {
+
+            // get scan code
+            const scanCode = scannedCode.split("_")[1];
+
+            if (scanCode === "000001") {
+
+                // validate order weight
+                if (!orderWeight || orderWeight === "0") {
+                    // alert order weight is required to print label
+                    alert("Order Weight is required to print label");
+                    return;
+                }
+
+                // validate selected printer
+                if (!selectedPrinter.name) {
+                    // alert printer is required to print label
+                    alert("Selected Printer is required to print label");
+                    return;
+                }
+
+                // validate order items packed status
+                if ((orderItemsPackedStatus.filter(item => !item.packed)).length) {
+                    // alert order items are required to be packed to print label
+                    alert("Order Items are required to be packed to print label");
+                    return;
+                }
+
+                // print label
+                handlePrintLabel();
+
+            }
+
+            if (scanCode === "000002") {
+               
+                // validate order item packed status
+                if ((orderItemsPackedStatus.filter(item => !item.packed)).length) {
+                    // alert order items are required to be packed to complete order
+                    alert("Order Items are required to be packed to complete order");
+                    return;
+                }
+
+                // validate shipments
+                if (!shipments || (!shipments.filter(shipment => !shipment.Voided).length)) {
+                    // alert shipments are required to complete order
+                    alert("at least 1 non-Voided shipment is required to complete order");
+                    return;
+                }
+
+                handleCompleteOrder();
+
+            }
+
+        }
+
+        // handle if barcode scan is order item
         for (let i = 0; i < currentOrderItemsPackedStatus.length; i++) {
 
             if (currentOrderItemsPackedStatus[i].id.toString() !== scannedCode) {
@@ -879,21 +997,43 @@ const OrderPage = ({user}) => {
 
     }
 
+    // Handles Flag Order for error
+    const handleFlagForError = async (orderID, flaggedError) => {
+        
+        // Set Screen Loading
+        setLoading(true);
+
+        // Flag Order
+        await postFlagError(orderID, flaggedError);
+
+        // unlock order
+        await postUnlockOrder(order.ID);
+
+        // Navigate back to tote page
+        navigate("/scan")
+
+        // Turn of loading in case
+        setLoading(false);
+
+
+    }
+
+
 
 
     // RENDER PROPER PAGE
-
-    // Show Loading Screen
-    if (loading) {
-        return (
-            <Loading></Loading>
-        )
-    }
 
     // Show order error screen
     if (orderError) {
         return (
             <Error message={orderError} linkText="Go back to Tote page" linkPath="/scan"></Error>
+        )
+    }
+
+     // Show Loading Screen
+     if (loading) {
+        return (
+            <Loading></Loading>
         )
     }
 
@@ -905,7 +1045,8 @@ const OrderPage = ({user}) => {
             <p onClick={handleBackToTotePageClick} className='hover:text-blue-500 transition duration-300 text-sm cursor-pointer inline'> <i className="bi bi-arrow-left"></i> Go back to Tote page</p>
             <div className="w-full flex items-center justify-between my-1">
                 <h2 className="text-2xl font-semibold">Order #{order.ID}</h2>
-                <div className="flex items-center justify-end">
+                <div className="flex items-center justify-end gap-6">
+                    <div target="_blank" onClick={() => {shell.openExternal( `https://whsrv.hoopswagg.com/hq/orders/view/${order.ID}` )}} className="text-white rounded font-light bg-blue-500 hover:bg-blue-400 py-2 px-3 flex items-center justify-center transition cursor-pointer">View in Dashboard</div>
                     <Dropdown text={`${selectedPrinter ? selectedPrinter.displayName : "Select Label Printer" }`} textColorClass='text-black' className="mx-2" >
                         {
                             printers.map(printer => (
@@ -944,7 +1085,7 @@ const OrderPage = ({user}) => {
                                 
                                     return (
                                         <div className="w-full flex items-center justify-between py-2 border-b border-gray-300 gap-2 cursor-pointer hover:bg-gray-200 transition duration-300" onClick={() => {handlePackItem(item.ID)}}>
-                                            <img src="/images/sockImage.png" alt="" className="w-1/8" />
+                                            <img src={sockImage} alt="" className="w-1/8" />
                                             <p className="w-3/4 truncate text-xs px-2 text-blue-500">{item.ProductName}</p>
                                             <p className="w-1/8 text-sm text-centered px-6">{item.Quantity}</p>
                                         </div>
@@ -978,7 +1119,7 @@ const OrderPage = ({user}) => {
 
                                 return (
                                     <div className="w-full flex items-center justify-between py-2 border-b border-gray-300 gap-2">
-                                        <img src="/images/sockImage.png" alt="" className="w-1/8" />
+                                        <img src={sockImage} alt="" className="w-1/8" />
                                         <p className="w-5/8 truncate text-xs px-2 text-blue-500">{item.ProductName}</p>
                                         <button className="w-1/8 text-xs rounded-full bg-blue-200 p-1 px-2 cursor-pointer hover:bg-blue-100 transition" onClick={() => {handleUnpackItem(item.ID)}}>unpack</button>
                                         <p className="w-1/8 text-sm text-centered px-6">{item.Quantity}</p>
@@ -993,7 +1134,7 @@ const OrderPage = ({user}) => {
             </div>
             <div className="w-2/3 flex flex-col items-stretch gap-6 justify-center h-full">
                 <div className="h-1/3 flex items-stretch gap-6 justify-center">
-                    <Card className="w-5/12">
+                    <Card className="w-1/3">
                         <div className="w-full flex items-center justify-between pb-3">
                             <h4 className="text-lg font-semibold">Ship to</h4>
                             <Popup modal trigger={<p className='text-blue-500 cursor-pointer text-sm'>Edit</p>} position="center">
@@ -1077,7 +1218,7 @@ const OrderPage = ({user}) => {
                         {order.ShipTo.Street3 && (<p className="text-sm">{order.ShipTo.Street3}</p>)}
                         <p className="text-sm">{order.ShipTo.City}, {order.ShipTo.State}, {order.ShipTo.PostalCode}</p>
                     </Card>
-                    <Card className="w-1/3">
+                    <Card className={`${ order.InternalNotes ? "w-1/5" : "w-1/3"}`}>
                         <div className="w-full flex items-center justify-between pb-3">
                             <h4 className="text-lg font-semibold">Shipping Method</h4>
                             <Popup modal onOpen={handlePopulateShippingRates} trigger={<p className='text-blue-500 cursor-pointer text-sm'>View Rates</p>} position="center">
@@ -1136,7 +1277,17 @@ const OrderPage = ({user}) => {
                             <p className='my-2'><span className="font-semibold">Shipping Service</span>: {order.RequestedShippingService}</p>
                         </div>
                     </Card>
-                    <Card className="w-1/4">
+                    { order.InternalNotes && (
+                    <Card className="w-1/5 border-2 border-red-500">
+                        {/* display internal notes */}
+                        <h4 className="text-lg font-semibold">Internal Notes</h4>
+                        <p className="my-2">
+                            {order.InternalNotes}
+                        </p>
+
+                    </Card>
+                    ) }
+                    <Card className={`${ order.InternalNotes ? "w-1/5" : "w-1/3"}`}>
                         <div className="w-full flex items-center justify-between pb-3">
                             <h4 className="text-lg font-semibold">Weight</h4>
                             <Popup modal trigger={<p className='text-blue-500 cursor-pointer text-sm'>Edit</p>} position="center">
@@ -1176,30 +1327,12 @@ const OrderPage = ({user}) => {
                     <div className="pb-2 overflow-scroll h-4/5">
                         {
                             order.Boxes.map(function(box){
-                                if (box.SuggestedBox) {
-                                    return (
-                                        <label htmlFor={"box_" + box.ID} className="w-full flex items-center justify-start py-2 border-b border-gray-300 gap-6 cursor-pointer">
-                                            <input onChange={handleBoxSelect} type="radio" name="box" id={"box_" + box.ID} value={box.ID} defaultChecked={true} className="w-5 h-5" />
-                                            <label htmlFor={"box_" + box.ID} className="text-sm tracking-widest cursor-pointer">{box.Name}</label>
-                                        </label>
-                                    )
-                                }
-
-                                return <></>
-                            })
-                        }
-                        {
-                            order.Boxes.map(function(box){
-                                if (!box.SuggestedBox) {
-                                    return (
-                                        <label htmlFor={"box_" + box.ID} className="w-full flex items-center justify-start py-2 border-b border-gray-300 gap-6 cursor-pointer">
-                                            <input onChange={handleBoxSelect} type="radio" name="box" id={"box_" + box.ID} value={box.ID} defaultChecked={false} className="w-5 h-5" />
-                                            <label htmlFor={"box_" + box.ID} className="text-sm tracking-widest cursor-pointer">{box.Name}</label>
-                                        </label>
-                                    )
-                                }
-
-                                return <></>
+                                return (
+                                    <label htmlFor={"box_" + box.ID} className="w-full flex items-center justify-start py-2 border-b border-gray-300 gap-6 cursor-pointer">
+                                        <input onChange={handleBoxSelect} type="checkbox" name={"box_" + box.ID} id={"box_" + box.ID} value={box.ID} checked={box.ID === parseInt(orderBoxID)} className="w-5 h-5" />
+                                        <label htmlFor={"box_" + box.ID} className="text-sm tracking-widest cursor-pointer">{box.Name}</label>
+                                    </label>
+                                )
                             })
                         }
                     </div>
@@ -1254,8 +1387,28 @@ const OrderPage = ({user}) => {
 
         {/* Complete Order and Print Label Buttons */}
         <div className="flex w-full items-center justify-end gap-2 my-4">
-            <button className={`bg-blue-500 px-6 py-3 font-light rounded ${selectedPrinter.name && !(orderItemsPackedStatus.filter(item => !item.packed)).length ? "cursor-pointer hover:bg-blue-400" : "cursor-not-allowed opacity-70" } text-white transition duration-200`} disabled={`${selectedPrinter.name && !(orderItemsPackedStatus.filter(item => !item.packed)).length ? "" : true}`} onClick={handlePrintLabel}>Print Label</button>
-            <button className={`bg-blue-500 px-6 py-3 font-light rounded text-white transition duration-200 ${(orderItemsPackedStatus.filter(item => !item.packed)).length || !shipments.filter(shipment => !shipment.Voided).length ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-blue-400" }`} disabled={`${(orderItemsPackedStatus.filter(item => !item.packed)).length || !shipments.filter(shipment => !shipment.Voided).length ? true : ""}`} onClick={handleCompleteOrder} >Complete Order</button>
+            {/* red popup button action to flag for error */}
+            <Popup onClose={() => {setFlaggedError("")}} trigger={<button className="bg-red-500 hover:bg-red-400 transition text-white font-light py-3 px-6 rounded">Flag for Error</button>} modal position="center" >
+                {close => (
+                    <div className="bg-white rounded-lg p-4">
+                        <h3 className="text-xl font-semibold w-full text-center">Once order is flagged for error, please set it aside</h3>
+                        {/* input for reason flagged for error with label */}
+                        <div className='my-4'>
+                            <label htmlFor="reason" className="text-lg">Reason flagged for error</label>
+                            <input onInput={(event) => { setFlaggedError(event.target.value) }} type="text" id="reason" className="w-full p-2 border-2 border-gray-300 rounded-lg" />
+                        </div>
+
+                        {/* cancel button that closes popup */}
+                        <div className="flex justify-end gap-4">
+                            <button onClick={close} className="bg-white border border-gray-200 hover:bg-gray-200 duration-300 transition text-black font-light py-3 px-6 rounded">Cancel</button>
+                            <button onClick={() => { handleFlagForError(order.ID, flaggedError) }} className={`${ flaggedError ? "bg-red-500 hover:bg-red-400" : "bg-red-400 cursor-not-allowed" } transition text-white font-light py-3 px-6 rounded`} disabled={!flaggedError}>Flag For Error</button>
+                        </div>
+                        
+                    </div>
+                )}
+            </Popup>
+            <button className={`bg-blue-500 px-6 py-3 font-light rounded ${orderWeight > 0 && selectedPrinter.name && !(orderItemsPackedStatus.filter(item => !item.packed)).length ? "cursor-pointer hover:bg-blue-400" : "cursor-not-allowed opacity-70" } text-white transition duration-200`} disabled={`${orderWeight > 0 && selectedPrinter.name && !(orderItemsPackedStatus.filter(item => !item.packed)).length ? "" : true}`} onClick={handlePrintLabel}>Print Label</button>
+            <button className={`bg-blue-500 px-6 py-3 font-light rounded text-white transition duration-200 ${(orderItemsPackedStatus.filter(item => !item.packed)).length || !shipments || (!shipments.filter(shipment => !shipment.Voided).length) ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-blue-400" }`} disabled={`${(orderItemsPackedStatus.filter(item => !item.packed)).length || !shipments || !shipments.filter(shipment => !shipment.Voided).length ? true : ""}`} onClick={handleCompleteOrder} >Complete Order</button>
         </div>
     </div>
     )

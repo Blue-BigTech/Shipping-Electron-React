@@ -68,3 +68,52 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+### BRADY'S BUILD INSTRUCTIONS
+
+### MAC
+
+# Change isDev to false in app.js
+
+# Change .env variables to correct ones
+
+# build react
+
+npm run build
+
+# delete release-builds and dist in root
+
+# run package for darwin command
+
+electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds
+
+# Packed application into dist folder
+
+./node_modules/.bin/electron-builder --prepackaged ./release-builds/shipping-darwin-x64
+
+# Final packaged dmg executable will be in dist folder
+
+### WINDOWS
+
+# Change isDev to false in app.js
+
+# Change .env variables to correct ones
+
+# build react
+
+npm run build
+
+# delete release-builds and dist in root
+
+# run package for win32 command
+
+electron-packager . --overwrite --platform=win32 --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds
+
+# Folder is large, and will take a while to move, but move the folder ./release-builds/shipping-win32-x64 to the PC
+
+<!--
+# Packed application into dist folder
+
+./node_modules/.bin/electron-builder --win --prepackaged ./release-builds/shipping-win32-x64
+
+# Final packaged i executable will be in dist folder -->

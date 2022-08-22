@@ -2,6 +2,8 @@
   "name": "shipping",
   "version": "0.1.0",
   "private": true,
+  "despcription": "",
+  "author": "Brady Agranoff",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
@@ -20,6 +22,7 @@
     "react-scripts": "^5.0.1",
     "reactjs-popup": "^2.0.5",
     "request-promise-native": "^1.0.9",
+    "serve": "^14.0.1",
     "unix-print": "^1.1.0",
     "web-vitals": "^2.1.4"
   },
@@ -29,7 +32,7 @@
   "main": "app.js",
   "homepage": "./",
   "scripts": {
-    "start": "electron-forge start",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
@@ -39,8 +42,10 @@
     "postinstall": "electron-rebuild",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "build-electron": "mkdir build/src && cp -r electron/. build/electron && cp -r src/shared/. build/src/shared"
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
   },
+  "postinstall": "electron-builder install-app-deps",
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -62,17 +67,27 @@
   "devDependencies": {
     "@electron-forge/cli": "^6.0.0-beta.65",
     "@electron-forge/maker-deb": "^6.0.0-beta.65",
+    "@electron-forge/maker-dmg": "^6.0.0-beta.65",
     "@electron-forge/maker-rpm": "^6.0.0-beta.65",
     "@electron-forge/maker-squirrel": "^6.0.0-beta.65",
     "@electron-forge/maker-zip": "^6.0.0-beta.65",
     "autoprefixer": "^10.4.7",
     "concurrently": "^7.2.2",
     "electron": "^19.0.6",
+    "electron-builder": "^23.3.3",
     "electron-is-dev": "^2.0.0",
+    "electron-packager": "^15.5.1",
     "electron-rebuild": "^3.2.8",
     "postcss": "^8.4.14",
     "tailwindcss": "^3.1.4",
     "wait-on": "^6.0.1"
+  },
+  "build": {
+    "extends": null,
+    "appId": "your.id",
+    "mac": {
+      "category": "your.app.category.type"
+    }
   },
   "config": {
     "forge": {
@@ -81,7 +96,9 @@
         {
           "name": "@electron-forge/maker-squirrel",
           "config": {
-            "name": "shipping"
+            "name": "shipping",
+            "authors": "Brady Agranoff",
+            "exe": "shipping.exe"
           }
         },
         {

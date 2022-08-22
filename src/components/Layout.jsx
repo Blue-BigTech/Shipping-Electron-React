@@ -8,6 +8,9 @@ import Dropdown from "./Dropdown"
 import Error from './Error'
 import Loading from './Loading'
 
+// Img Imports
+import logoLight from "../images/logo-light.png"
+
 const Layout = ({children, user, setUser}) => {
 
   // Layout States
@@ -72,7 +75,7 @@ const Layout = ({children, user, setUser}) => {
     return (
       <div className='flex items-strech flex-col'>
       <div className="bg-blue-500 w-full sticky py-4 px-12 flex items-center justify-between text-white">
-          <img src="/images/logo-light.png" alt="" width={150} height={75} />
+          <img src={logoLight} alt="" width={150} height={75} />
           <Dropdown arrowColorClass='text-white' icon={<i className="bi bi-person-fill text-white"></i>} text={user.Username}>
               <li className="w-full">
                 <button className="w-full text-black text-left cursor-pointer hover:bg-gray-200 transition duration-300 pl-4 p-1 select-none" onClick={logout}>Sign Out</button>
@@ -90,7 +93,7 @@ const Layout = ({children, user, setUser}) => {
     return (
       <div className='flex items-strech flex-col h-full'>
         <div className="bg-blue-500 w-full sticky py-4 px-12 flex items-center justify-between text-white">
-            <img src="/images/logo-light.png" alt="" width={150} height={75} />
+            <img src={logoLight} alt="" width={150} height={75} />
             <Dropdown arrowColorClass='text-white' icon={<i className="bi bi-person-fill text-white"></i>} text={user.Username}>
                 <li className="w-full">
                   <button className="w-full text-black text-left cursor-pointer hover:bg-gray-200 transition duration-300 pl-4 p-1 select-none" onClick={logout}>Sign Out</button>
@@ -107,7 +110,7 @@ const Layout = ({children, user, setUser}) => {
   return (
     <div className='flex items-strech flex-col h-full'>
         <div className="bg-blue-500 w-full sticky py-4 px-12 flex items-center justify-between text-white">
-            <img src="/images/logo-light.png" alt="" width={150} height={75} />
+            <img src={logoLight} alt="" width={150} height={75} />
             <Dropdown arrowColorClass='text-white' icon={<i className="bi bi-person-fill text-white"></i>} text={user.Username}>
                 <li className="w-full">
                   <button className="w-full text-black text-left cursor-pointer hover:bg-gray-200 transition duration-300 pl-4 p-1 select-none" onClick={logout}>Sign Out</button>
