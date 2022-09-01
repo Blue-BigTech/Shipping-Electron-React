@@ -1,5 +1,8 @@
 ## Build Instructions
 
+**Make sure all dependices are installed**
+`npm i`
+
 **Mac**
 
 1. change isDev to false in app.js
