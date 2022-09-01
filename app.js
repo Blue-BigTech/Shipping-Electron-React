@@ -3,12 +3,12 @@ const path = require('path');
 const fs = require("fs")
 
 // PDF Printing Imports
-const { DownloaderHelper } = require('node-downloader-helper');
+const { download } = require('electron-dl');
 const unixPrint = require("unix-print");
 const windowsPrint = require("pdf-to-printer");
 
 // Electron Imports
-const { app, BrowserWindow, ipcMain, Notification } = require('electron');
+const { app, BrowserWindow, ipcMain, Notification, dialog } = require('electron');
 const isDev = false;
 
 // Create window once Electron has been initialized
@@ -54,28 +54,23 @@ function createWindow() {
 
   
   // Wait for a request to print a label from the front end
-  ipcMain.on("print-label", async (event, data) => {
+  ipcMain.on("print-label", (event, data) => {
 
     // Parse the print data
     const printData = JSON.parse(data)
 
-    // create download instance
-    const download = new DownloaderHelper(printData.URL, __dirname, {
-      fileName: "temporary-label.pdf"
-    });
+    
 
-    // Set listener for Once Download is done, begin printing
-    download.on('end', async () => {
+    // Start download
+    download(BrowserWindow.getFocusedWindow(), printData.URL, { filename: "temporary-label.pdf" }).then(async (dl) => {
 
       // Print label if it's a mac
       if (process.platform === "darwin") {
-        await unixPrint.print("temporary-label.pdf", printData.printerName);
+        await unixPrint.print(dl.getSavePath(), printData.printerName);
       }
 
       // Print label if it's a windows
       if (process.platform === "win32") {
-
-        new Notification({ title: "Printing Label...Windows", body: "should be printing"}).show()
 
         // Set Printing Options
         const printingOptions = {
@@ -85,23 +80,15 @@ function createWindow() {
           printingOptions.printer = printData.printerName; 
         }
 
-        // log printData
-        new Notification({ title: "Print Data", body: JSON.stringify(printData)}).show()
 
-
-       await windowsPrint.print("temporary-label.pdf", printingOptions);
+        await windowsPrint.print(dl.getSavePath(), printingOptions);
       }
 
 
       // Delete temporary label file
-      fs.unlinkSync("temporary-label.pdf");
+      fs.unlinkSync(dl.getSavePath());
 
     })
-
-
-    
-    // Start download
-    download.start();
 
   })
 

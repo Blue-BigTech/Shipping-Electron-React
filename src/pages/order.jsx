@@ -11,7 +11,7 @@ import Loading from '../components/Loading';
 import Popup from 'reactjs-popup';
 
 // Img imports
-import sockImage from "../images/sockImage.png"
+import placeholderImage from "../images/placeholderItemImage.png"
 
 // Electron imports
 const { ipcRenderer, shell } = window.require("electron");
@@ -174,7 +174,7 @@ const OrderPage = ({user}) => {
         return function cleanup() {
             document.removeEventListener('keydown', handleKeyDown);
         }
-    }, [])
+    }, [orderWeight, orderItemsPackedStatus, orderBoxID, selectedPrinter, shipments])
 
 
     // API CALL FUNCTIONS
@@ -467,7 +467,7 @@ const OrderPage = ({user}) => {
 
         // Parameter Validation
         if (!shipmentID) {
-            setOrderError("Uh oh, unable to void label without parameter shipmentID");
+            alert("Uh oh, unable to void label without parameter shipmentID");
             return;
         }
 
@@ -500,25 +500,25 @@ const OrderPage = ({user}) => {
 
         // orderID
         if (!orderID) {
-            setOrderError("Uh oh, unable to purchase label without orderID parameter.");
+            alert("Uh oh, unable to purchase label without orderID parameter.");
             return;
         }
 
         // weight
         if (!weight) {
-            setOrderError("Uh oh, unable to purchase label without weight parameter.");
+            alert("Uh oh, unable to purchase label without weight parameter.");
             return;
         }
 
         // boxID
         if (!boxID) {
-            setOrderError("Uh oh, unable to purchase label without boxID parameter.");
+            alert("Uh oh, unable to purchase label without boxID parameter.");
             return;
         }
 
         // userID
         if (!userID) {
-            setOrderError("Uh oh, unable to purchase label without userID parameter.");
+            alert("Uh oh, unable to purchase label without userID parameter.");
             return;
         }
 
@@ -558,12 +558,12 @@ const OrderPage = ({user}) => {
         
         // Parameter Validation
         if (!orderID) {
-            setOrderError("Uh oh, unable to flag error without orderID parameter.");
+            alert("Uh oh, unable to flag error without orderID parameter.");
             return;
         }
 
         if (!errorMessage) {
-            setOrderError("Uh oh, unable to flag error without errorMessage parameter.");
+            alert("Uh oh, unable to flag error without errorMessage parameter.");
             return;
         }
 
@@ -721,7 +721,7 @@ const OrderPage = ({user}) => {
         event.preventDefault();
 
         // Set new order weight
-        setOrderWeight(event.target.weight.value)
+        setOrderWeight(parseFloat(event.target.weight.value))
 
         // Closes Popup
         closePopup();
@@ -852,6 +852,7 @@ const OrderPage = ({user}) => {
 
                 // validate order weight
                 if (!orderWeight || orderWeight === "0") {
+                    alert(orderWeight)
                     // alert order weight is required to print label
                     alert("Order Weight is required to print label");
                     return;
@@ -1082,10 +1083,11 @@ const OrderPage = ({user}) => {
                                 // Get Item
                                 const itemArray = order.Items.filter(orderItem => orderItem.ID === orderItemStatus.id);
                                 const item = itemArray[0]
+                                console.log(item)
                                 
                                     return (
                                         <div className="w-full flex items-center justify-between py-2 border-b border-gray-300 gap-2 cursor-pointer hover:bg-gray-200 transition duration-300" onClick={() => {handlePackItem(item.ID)}}>
-                                            <img src={sockImage} alt="" className="w-1/8" />
+                                            <img src={item.ImageURL ? item.ImageURL : placeholderImage} alt="" className="w-16" />
                                             <p className="w-3/4 truncate text-xs px-2 text-blue-500">{item.ProductName}</p>
                                             <p className="w-1/8 text-sm text-centered px-6">{item.Quantity}</p>
                                         </div>
@@ -1119,7 +1121,7 @@ const OrderPage = ({user}) => {
 
                                 return (
                                     <div className="w-full flex items-center justify-between py-2 border-b border-gray-300 gap-2">
-                                        <img src={sockImage} alt="" className="w-1/8" />
+                                        <img src={placeholderImage} alt="" className="w-1/8" />
                                         <p className="w-5/8 truncate text-xs px-2 text-blue-500">{item.ProductName}</p>
                                         <button className="w-1/8 text-xs rounded-full bg-blue-200 p-1 px-2 cursor-pointer hover:bg-blue-100 transition" onClick={() => {handleUnpackItem(item.ID)}}>unpack</button>
                                         <p className="w-1/8 text-sm text-centered px-6">{item.Quantity}</p>

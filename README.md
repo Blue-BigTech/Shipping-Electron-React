@@ -1,119 +1,25 @@
-# Getting Started with Create React App
+## Build Instructions
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+**Mac**
 
-## Available Scripts
+1. change isDev to false in app.js
+2. change .env variables to correct ones
+3. build react
+   `npm run build`
+4. delete release-builds and dist in root
+5. run package for darwin command
+   `electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds`
+6. packed application into dist folder
+   `./node_modules/.bin/electron-builder --prepackaged ./release-builds/shipping-darwin-x64`
+7. final packaged dmg executable will be in dist folder
 
-In the project directory, you can run:
+**Windows**
 
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-
-### BRADY'S BUILD INSTRUCTIONS
-
-### MAC
-
-# Change isDev to false in app.js
-
-# Change .env variables to correct ones
-
-# build react
-
-npm run build
-
-# delete release-builds and dist in root
-
-# run package for darwin command
-
-electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds
-
-# Packed application into dist folder
-
-./node_modules/.bin/electron-builder --prepackaged ./release-builds/shipping-darwin-x64
-
-# Final packaged dmg executable will be in dist folder
-
-### WINDOWS
-
-# Change isDev to false in app.js
-
-# Change .env variables to correct ones
-
-# build react
-
-npm run build
-
-# delete release-builds and dist in root
-
-# run package for win32 command
-
-electron-packager . --overwrite --platform=win32 --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds
-
-# Folder is large, and will take a while to move, but move the folder ./release-builds/shipping-win32-x64 to the PC
-
-<!--
-# Packed application into dist folder
-
-./node_modules/.bin/electron-builder --win --prepackaged ./release-builds/shipping-win32-x64
-
-# Final packaged i executable will be in dist folder -->
+1. change isDev to false in app.js
+2. change .env variables to correct ones
+3. build react
+   `npm run build`
+4. delete release-builds and dist in root
+5. run package for win32 command
+   `electron-packager . --overwrite --platform=win32 --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds`
+6. folder is large, and will take a while to move, but move the folder ./release-builds/shipping-win32-x64 to the PC
