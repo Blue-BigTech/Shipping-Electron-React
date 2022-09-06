@@ -1,5 +1,6 @@
 {
   "name": "shipping",
+  "productName": "HoopSwagg Shipping",
   "version": "0.1.0",
   "private": true,
   "despcription": "",
@@ -10,6 +11,7 @@
     "@testing-library/user-event": "^13.5.0",
     "ajv": "^8.11.0",
     "bootstrap-icons": "^1.8.3",
+    "electron-dl": "^3.3.1",
     "electron-squirrel-startup": "^1.0.0",
     "fs": "^0.0.1-security",
     "jsonfile": "^6.1.0",
@@ -41,7 +43,7 @@
     "dev": "concurrently -k \"BROWSER=none npm start\" \"npm:electron\"",
     "electron": "while ! bash -c \"echo > /dev/tcp/localhost/3000\"; do sleep 1; done; electron .",
     "preinstall": "npx npm-force-resolutions",
-    "postinstall": "electron-rebuild",
+    "postinstall": "electron-builder install-app-deps",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "pack": "electron-builder --dir",
