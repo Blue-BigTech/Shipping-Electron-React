@@ -12,6 +12,7 @@ import Popup from 'reactjs-popup';
 
 // Img imports
 import placeholderImage from "../images/placeholderItemImage.png"
+import loader from "../images/loading.gif"
 
 // Electron imports
 const { ipcRenderer, shell } = window.require("electron");
@@ -42,6 +43,7 @@ const OrderPage = ({user}) => {
     const [shippingRatesError, setShippingRatesError] = useState("");
     const [selectedRate, setSelectedRate] = useState("");
     const [shippingRatesPopupLoading, setShippingRatesPopupLoading] = useState(false);
+    const [shippingRatesPopupOpen, setShippingRatesPopupOpen] = useState(false);
 
     // Shipments States
     const [shipmentsLoading, setShipmentsLoading] = useState(false);
@@ -310,19 +312,19 @@ const OrderPage = ({user}) => {
 
         // orderID
         if (!orderID) {
-            setShippingRatesError("Uh oh, unable to fetch shipping rates without orderID parameter.");
+            alert("Uh oh, unable to fetch shipping rates without orderID parameter.");
             return;
         }
 
         // orderWeightToFetch
         if (!orderWeightToFetch) {
-            setShippingRatesError("Uh oh, unable to fetch shipping rates without orderWeightToFetch parameter.");
+            alert("Uh oh, unable to fetch shipping rates without orderWeightToFetch parameter.");
             return;
         }
 
         // orderBoxIDToFetch
         if (!orderBoxIDToFetch) {
-            setShippingRatesError("Uh oh, unable to fetch shipping rates without orderBoxIDToFetch parameter.");
+            alert("Uh oh, unable to fetch shipping rates without orderBoxIDToFetch parameter.");
             return;
         }
 
@@ -795,6 +797,22 @@ const OrderPage = ({user}) => {
     // Populates Shipping Rates Popup
     const handlePopulateShippingRates = async () => {
 
+        // Validation
+        if (!orderWeight) {
+            alert("Order Weight is required to get shipping rates")
+            setShippingRatesPopupOpen(false)
+            return
+        }
+
+        if (!orderBoxID) {
+            alert("Box is required to get shipping rates")
+            setShippingRatesPopupOpen(false)
+            return
+        }
+
+
+        setShippingRatesPopupOpen(true)
+
         // set loading to true
         setShippingRatesPopupLoading(true)
 
@@ -1143,7 +1161,7 @@ const OrderPage = ({user}) => {
                                 {close => (
                                     <div className="relative">
                                         <div className={`absolute left-0 top-0 w-full h-full bg-white flex items-center justify-center ${!shipToFormLoading && "hidden"}`}>
-                                            <img src="https://www.uttf.com.ua/assets/images/loader2.gif" alt="" />
+                                            <img src={loader} alt="" />
                                         </div>
                                         <div className="px-8">
                                             <div className="w-full flex items-center justify-between my-4">
@@ -1225,11 +1243,12 @@ const OrderPage = ({user}) => {
                         <Card className="flex-1">
                             <div className="w-full flex items-center justify-between pb-3">
                                 <h4 className="text-lg font-semibold">Shipping Method</h4>
-                                <Popup modal onOpen={handlePopulateShippingRates} trigger={<p className='text-blue-500 cursor-pointer text-sm'>View Rates</p>} position="center">
+                                <p className='text-blue-500 cursor-pointer text-sm' onClick={handlePopulateShippingRates}>View Rates</p>
+                                <Popup modal open={shippingRatesPopupOpen} onClose={() => {setShippingRatesPopupOpen(false)}} position="center">
                                 {close => (
                                     <div className="relative">
                                         <div className={`absolute left-0 top-0 w-full h-full bg-white flex items-center justify-center ${!shippingRatesPopupLoading && "hidden"}`}>
-                                            <img src="https://www.uttf.com.ua/assets/images/loader2.gif" alt="" />
+                                            <img src={loader} alt="" />
                                         </div>
                                         <div className="px-8 py-4">
                                             <div className="w-full flex items-center justify-between py-3 border-b border-gray-300">
@@ -1312,7 +1331,7 @@ const OrderPage = ({user}) => {
                                                         <input type="number" name='weight' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' ref={weightInputRef} defaultValue={orderWeight} step="0.01" />
                                                 </div>
                                                 <div className="my-4 w-full flex items-center justify-end">
-                                                    <button className="bg-white text-black font-extralight p-2 px-6 rounded hover:bg-gray-200 cursor-pointer transition duration-300 mx-2" onClick={close}>
+                                                    <button type='button' className="bg-white text-black font-extralight p-2 px-6 rounded hover:bg-gray-200 cursor-pointer transition duration-300 mx-2" onClick={close}>
                                                         Cancel
                                                     </button>
                                                     <input type='submit' className="bg-blue-500 hover:bg-blue-400 rounded text-white p-2 font-extralight transition duration-300 px-10 cursor-pointer" value="Save" />
@@ -1393,7 +1412,7 @@ const OrderPage = ({user}) => {
                         </div>
                         <div className="relative">
                             <div className={`absolute left-0 top-28 w-full h-full bg-white flex items-center justify-center ${!shipmentsLoading && "hidden"}`}>
-                                <img src="https://www.uttf.com.ua/assets/images/loader2.gif" alt="" />
+                                <img src={loader} alt="" />
                             </div>
                             <table className={`w-full overflow-scroll ${shipmentsLoading && "hidden"}`}>
                                 <tr className="border-b border-gray-200">
@@ -1441,13 +1460,13 @@ const OrderPage = ({user}) => {
                     {close => (
                         <div className="bg-white rounded-lg p-4">
                             <h3 className="text-xl font-semibold w-full text-center">Once order is flagged for error, please set it aside</h3>
-                            input for reason flagged for error with label 
+                            
                             <div className='my-4'>
                                 <label htmlFor="reason" className="text-lg">Reason flagged for error</label>
                                 <input onInput={(event) => { setFlaggedError(event.target.value) }} type="text" id="reason" className="w-full p-2 border-2 border-gray-300 rounded-lg" />
                             </div>
     
-                            cancel button that closes popup 
+                            
                             <div className="flex justify-end gap-4">
                                 <button onClick={close} className="bg-white border border-gray-200 hover:bg-gray-200 duration-300 transition text-black font-light py-3 px-6 rounded">Cancel</button>
                                 <button onClick={() => { handleFlagForError(order.ID, flaggedError) }} className={`${ flaggedError ? "bg-red-500 hover:bg-red-400" : "bg-red-400 cursor-not-allowed" } transition text-white font-light py-3 px-6 rounded`} disabled={!flaggedError}>Flag For Error</button>

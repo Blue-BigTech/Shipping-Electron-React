@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 
 // Img Imports
 import computerIconBlueLines from "../images/computerIconBlueLines.png"
+import loader from '../images/loading.gif'
 
 const ScanATotePage = ({ user }) => {
 
@@ -151,7 +152,7 @@ const ScanATotePage = ({ user }) => {
             {close => (
                 <div className="relative">
                     <div className={`absolute left-0 top-0 w-full h-full bg-white flex items-center justify-center ${!formLoading && "hidden"}`}>
-                        <img src="https://www.uttf.com.ua/assets/images/loader2.gif" alt="" />
+                        <img src={loader} alt="" />
                     </div>
                     <div className='px-8'>
                         <div className="w-full flex items-center justify-between my-4">
