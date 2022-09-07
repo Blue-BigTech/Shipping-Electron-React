@@ -1,7 +1,7 @@
 // React imports
 import React from 'react'
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 // Component Import
 import Dropdown from "../components/Dropdown"
@@ -53,6 +53,10 @@ const OrderPage = ({user}) => {
     // Use Search Params
     const [searchParams] = useSearchParams();
 
+    // Refs
+    const weightInputRef = useRef();
+    const boxContainerRef = useRef();
+
     // useEffect Hooks for page
 
     // Get Initial Data On Page Load Function
@@ -80,13 +84,9 @@ const OrderPage = ({user}) => {
             const orderID = searchParams.get("order_id")
 
             // Fetch Order
-            const fetchedOrderPromise = fetchOrder(orderID)
+            const fetchedOrder = await fetchOrder(orderID)
             // Fetch Shipments
-            const fetchedShipmentsPromise = fetchShipments(orderID);
-
-            // Await both promises
-            const fetchedOrder = await fetchedOrderPromise;
-            const fetchedShipments = await fetchedShipmentsPromise;
+            const fetchedShipments = await fetchShipments(fetchedOrder.ID);
 
             
             // Set Order into state
@@ -110,11 +110,39 @@ const OrderPage = ({user}) => {
             // Set Order items Packed Status
             if (orderItemsPackedStatus.length < 1) {
                 const initialOrderItemsPackedStatus = [];
+                let orderItemScanned = false;
                 for (let i = 0; i < fetchedOrder.Items.length; i++) {
-                    initialOrderItemsPackedStatus.push({
-                        id: fetchedOrder.Items[i].ID,
-                        packed: false
-                    })
+
+                    // set packed true if order Item ID was scanned
+                    if (fetchedOrder.Items[i].ID.toString() === orderID && !orderItemScanned) {
+
+                        
+                        initialOrderItemsPackedStatus.push({
+                            index: `${i}`,
+                            id: fetchedOrder.Items[i].ID,
+                            packed: true
+                        })
+
+                        for (let j = 0; j < parseInt(fetchedOrder.Items[i].Quantity) - 1; j++) {
+                            initialOrderItemsPackedStatus.push({
+                                index: `${i}-${j}`,
+                                id: fetchedOrder.Items[i].ID,
+                                packed: false
+                            })
+                        }
+
+                        orderItemScanned = true;
+
+                        continue;
+                    }
+
+                    for (let j = 0; j < parseInt(fetchedOrder.Items[i].Quantity); j++) {
+                        initialOrderItemsPackedStatus.push({
+                            index: `${i}-${j}`,
+                            id: fetchedOrder.Items[i].ID,
+                            packed: false
+                        })
+                    }
                 }
 
                 setOrderItemsPackedStatus(initialOrderItemsPackedStatus)
@@ -598,7 +626,13 @@ const OrderPage = ({user}) => {
 
     // Selects Box
     const handleBoxSelect = (event) => {
+
+        // Set new Box
         setOrderBoxID(event.target.value);
+
+        // Scroll to top of box container
+        boxContainerRef.current.scrollTop = 0;
+
     }
 
     // Print Label
@@ -731,68 +765,30 @@ const OrderPage = ({user}) => {
     // Pack Item
     const handlePackItem = (orderItemID) => {
 
-        // Create new editable variable
-        const newOrderItemsPackedStatus = orderItemsPackedStatus;
+        //set new array to work with
+        let updatedOrderItemPackedStatus = (orderItemsPackedStatus)
 
-        // Get status of unpacked item
-        let orderItemPackedStatus;
-        for (let i = 0; i < orderItemsPackedStatus.length; i++) {
-            if (orderItemsPackedStatus[i].id === orderItemID) {
-                orderItemPackedStatus = orderItemsPackedStatus[i];
-                break;
-            }
-        }
-
-        // Return if item is already packed
-        if (orderItemPackedStatus.packed === true) {
-            return;
-        }
-
-        // Update new orderItemsPackedStatus
-        orderItemPackedStatus.packed = true;
-        for (let i = 0; i < newOrderItemsPackedStatus.length; i++) {
-            if (newOrderItemsPackedStatus[i].id === orderItemPackedStatus.id) {
-                newOrderItemsPackedStatus[i] = orderItemPackedStatus;
-                break;
-            }
-        }
+        // Find index of item in array to update
+        let indexToUpdate = updatedOrderItemPackedStatus.findIndex((item) => (item.id === orderItemID && item.packed === false))
+        updatedOrderItemPackedStatus[indexToUpdate].packed = true;
         
         // Set array
-        setOrderItemsPackedStatus([...newOrderItemsPackedStatus]);
+        setOrderItemsPackedStatus([...updatedOrderItemPackedStatus]);
 
     }
 
     // Unpack Item
     const handleUnpackItem = (orderItemID) => {
 
-        // Create new editable variable
-        const newOrderItemsPackedStatus = orderItemsPackedStatus;
+                //set new array to work with
+                let updatedOrderItemPackedStatus = (orderItemsPackedStatus)
 
-        // Get status of packed item
-        let orderItemPackedStatus;
-        for (let i = 0; i < orderItemsPackedStatus.length; i++) {
-            if (orderItemsPackedStatus[i].id === orderItemID) {
-                orderItemPackedStatus = orderItemsPackedStatus[i];
-                break;
-            }
-        }
-
-        // Return if item isn't already packed
-        if (orderItemPackedStatus.packed === false) {
-            return;
-        }
-
-        // Update new orderItemsPackedStatus
-        orderItemPackedStatus.packed = false;
-        for (let i = 0; i < newOrderItemsPackedStatus.length; i++) {
-            if (newOrderItemsPackedStatus[i].id === orderItemPackedStatus.id) {
-                newOrderItemsPackedStatus[i] = orderItemPackedStatus;
-                break;
-            }
-        }
-        
-        // Set array
-        setOrderItemsPackedStatus([...newOrderItemsPackedStatus]);
+                // Find index of item in array to update
+                let indexToUpdate = updatedOrderItemPackedStatus.findIndex((item) => (item.id === orderItemID && item.packed === true))
+                updatedOrderItemPackedStatus[indexToUpdate].packed = false;
+                
+                // Set array
+                setOrderItemsPackedStatus([...updatedOrderItemPackedStatus]);
 
     }
 
@@ -839,6 +835,9 @@ const OrderPage = ({user}) => {
             
             setOrderBoxID(boxID);
 
+            // Scroll to top of box container
+            boxContainerRef.current.scrollTop = 0;
+
             return;
         }
 
@@ -852,7 +851,6 @@ const OrderPage = ({user}) => {
 
                 // validate order weight
                 if (!orderWeight || orderWeight === "0") {
-                    alert(orderWeight)
                     // alert order weight is required to print label
                     alert("Order Weight is required to print label");
                     return;
@@ -907,7 +905,7 @@ const OrderPage = ({user}) => {
             }
 
             if(currentOrderItemsPackedStatus[i].packed) {
-                handleUnpackItem(currentOrderItemsPackedStatus[i].id)
+                // handleUnpackItem(currentOrderItemsPackedStatus[i].id)
             } else {
                 handlePackItem(currentOrderItemsPackedStatus[i].id)
             }
@@ -1039,382 +1037,430 @@ const OrderPage = ({user}) => {
     }
 
    
-    // Render Order Page
+    // Show Order Page
     return (
-    <div className='h-full flex items-stretch flex-col'>
-        <div className="w-full mb-6">
-            <p onClick={handleBackToTotePageClick} className='hover:text-blue-500 transition duration-300 text-sm cursor-pointer inline'> <i className="bi bi-arrow-left"></i> Go back to Tote page</p>
-            <div className="w-full flex items-center justify-between my-1">
-                <h2 className="text-2xl font-semibold">Order #{order.ID}</h2>
-                <div className="flex items-center justify-end gap-6">
-                    <div target="_blank" onClick={() => {shell.openExternal( `https://whsrv.hoopswagg.com/hq/orders/view/${order.ID}` )}} className="text-white rounded font-light bg-blue-500 hover:bg-blue-400 py-2 px-3 flex items-center justify-center transition cursor-pointer">View in Dashboard</div>
-                    <Dropdown text={`${selectedPrinter ? selectedPrinter.displayName : "Select Label Printer" }`} textColorClass='text-black' className="mx-2" >
-                        {
-                            printers.map(printer => (
-                                <li className="w-full">
-                                    <button className="w-full text-black text-left cursor-pointer hover:bg-gray-200 transition duration-300 pl-4 p-2 text-sm select-none" onClick={() =>  setSelectedPrinter(printer)}>{printer.displayName}</button>
-                                </li> 
-                            ))
-                        }
-                    </Dropdown>
+        <div className="flex flex-col gap-4 flex-1">
+            <div className="w-full">
+                <p onClick={handleBackToTotePageClick} className='hover:text-blue-500 transition duration-300 text-sm cursor-pointer inline'> <i className="bi bi-arrow-left"></i> Go back to Tote page</p>
+                <div className="w-full flex items-center justify-between my-1">
+                    <h2 className="text-2xl font-semibold">Order #{order.Number}</h2>
+                    <div className="flex items-center justify-end gap-6">
+                        <div target="_blank" onClick={() => {shell.openExternal( `https://whsrv.hoopswagg.com/hq/orders/view/${order.ID}` )}} className="text-white rounded font-light bg-blue-500 hover:bg-blue-400 py-2 px-3 flex items-center justify-center transition cursor-pointer">View in Dashboard</div>
+                        <Dropdown text={`${selectedPrinter ? selectedPrinter.displayName : "Select Label Printer" }`} textColorClass='text-black' className="mx-2" >
+                            {
+                                printers.map(printer => (
+                                    <li className="w-full">
+                                        <button className="w-full text-black text-left cursor-pointer hover:bg-gray-200 transition duration-300 pl-4 p-2 text-sm select-none" onClick={() =>  setSelectedPrinter(printer)}>{printer.displayName}</button>
+                                    </li> 
+                                ))
+                            }
+                        </Dropdown>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div className="flex items-center justify-center gap-6 grow">
-            <div className="w-1/3 flex flex-col items-stretch gap-6 justify-start h-full">
-                <Card className="h-1/2">
-                    <div className="w-full flex items-center justify-between border-b border-blue-500 pb-2 h-1/6">
-                        <h4 className="text-lg font-semibold">Order Items</h4>
-                        <h4 className="text-blue-500 text-lg font-semibold">{(orderItemsPackedStatus.filter(item => !item.packed)).length} Items</h4>
-                    </div>
-                    <div className="py-3 flex items-center justify-between border-b border-gray-300 h-1/6">
-                        <p className="text-xs text-gray-500">Product</p>
-                        <p className="text-xs text-gray-500">Quantity</p>
-                    </div>
-                    <div className="h-2/3 pb-2 overflow-scroll">
-                        {
-                             orderItemsPackedStatus.map(function(orderItemStatus){
-                                
-                                // don't render if item is packed
-                                if (orderItemStatus.packed) {
-                                    return <></>
-                                }
+            <div className='w-full flex flex-1 gap-4'>
+                
+                <div className="flex flex-col w-1/3 gap-4">
 
-                                // Get Item
-                                const itemArray = order.Items.filter(orderItem => orderItem.ID === orderItemStatus.id);
-                                const item = itemArray[0]
-                                console.log(item)
-                                
+                    {/* Non-Packed Order Items Card */}
+                    <Card className="flex-1">
+                        <div className="w-full flex items-center justify-between border-b border-blue-500 pb-2 h-1/6">
+                            <h4 className="text-lg font-semibold">Order Items</h4>
+                            <h4 className="text-blue-500 text-lg font-semibold">{(orderItemsPackedStatus.filter(item => !item.packed)).length} Items</h4>
+                        </div>
+                        <div className="py-3 flex items-center justify-between border-b border-gray-300 h-1/6">
+                            <p className="text-xs text-gray-500">Product</p>
+                        </div>
+                        <div className="h-2/3 pb-2 overflow-scroll">
+                            {
+                                    orderItemsPackedStatus.map(function(orderItemStatus){
+                                    
+                                    // don't render if item is packed
+                                    if (orderItemStatus.packed) {
+                                        return <></>
+                                    }
+
+                                    // Get Item
+                                    const itemArray = order.Items.filter(orderItem => orderItem.ID === orderItemStatus.id);
+                                    const item = itemArray[0]
+                                        return (
+                                            <div className="w-full flex items-center justify-between py-2 border-b border-gray-300 gap-2 cursor-pointer hover:bg-gray-200 transition duration-300" onClick={() => {handlePackItem(item.ID)}}>
+                                                <img src={item.ImageURL ? item.ImageURL : placeholderImage} alt="" className="w-16" />
+                                                <p className="w-3/4 truncate text-xs px-2 text-blue-500"><strong>{item.RenderID}</strong>: {item.ProductName}</p>
+                                            </div>
+                                        )
+
+                                })
+                            }
+                        </div>
+                    </Card>
+
+                    {/* Packed Order Items Card */}
+                    <Card className="flex-1">
+                        <div className="w-full flex items-center justify-between border-b border-blue-500 pb-2 h-1/6">
+                            <h4 className="text-lg font-semibold">Packed Items</h4>
+                            <h4 className="text-blue-500 text-lg font-semibold">{(orderItemsPackedStatus.filter(item => item.packed)).length} Items</h4>
+                        </div>
+                        <div className="py-3 flex items-center justify-between border-b border-gray-300 h-1/6">
+                            <p className="text-xs text-gray-500">Product</p>
+                        </div>
+                        <div className="pb-2 h-2/3 overflow-scroll">
+                        {
+                                orderItemsPackedStatus.map(function(orderItemStatus){
+                                    
+                                    // Don't render if the item isn't packed
+                                    if (!orderItemStatus.packed) {
+                                        return <></>
+                                    }
+
+                                    // Get Item
+                                    const itemArray = order.Items.filter(orderItem => orderItem.ID === orderItemStatus.id);
+                                    const item = itemArray[0]
+
                                     return (
-                                        <div className="w-full flex items-center justify-between py-2 border-b border-gray-300 gap-2 cursor-pointer hover:bg-gray-200 transition duration-300" onClick={() => {handlePackItem(item.ID)}}>
+                                        <div className="w-full flex items-center justify-between py-2 border-b border-gray-300 gap-2">
                                             <img src={item.ImageURL ? item.ImageURL : placeholderImage} alt="" className="w-16" />
-                                            <p className="w-3/4 truncate text-xs px-2 text-blue-500">{item.ProductName}</p>
-                                            <p className="w-1/8 text-sm text-centered px-6">{item.Quantity}</p>
+                                            <p className="w-5/8 truncate text-xs px-2 text-blue-500"><strong>{item.RenderID}</strong>: {item.ProductName}</p>
+                                            <button className="w-1/8 text-xs rounded-full bg-blue-200 p-1 px-2 cursor-pointer hover:bg-blue-100 transition" onClick={() => {handleUnpackItem(item.ID)}}>unpack</button>
                                         </div>
                                     )
+                                    
 
-                            })
-                        }
-                    </div>
-                </Card>
-                <Card className="h-1/2">
-                    <div className="w-full flex items-center justify-between border-b border-blue-500 pb-2 h-1/6">
-                        <h4 className="text-lg font-semibold">Packed Items</h4>
-                        <h4 className="text-blue-500 text-lg font-semibold">{(orderItemsPackedStatus.filter(item => item.packed)).length} Items</h4>
-                    </div>
-                    <div className="py-3 flex items-center justify-between border-b border-gray-300 h-1/6">
-                        <p className="text-xs text-gray-500">Product</p>
-                        <p className="text-xs text-gray-500">Quantity</p>
-                    </div>
-                    <div className="pb-2 h-2/3 overflow-scroll">
-                    {
-                            orderItemsPackedStatus.map(function(orderItemStatus){
-                                
-                                // Don't render if the item isn't packed
-                                if (!orderItemStatus.packed) {
-                                    return <></>
-                                }
-
-                                // Get Item
-                                const itemArray = order.Items.filter(orderItem => orderItem.ID === orderItemStatus.id);
-                                const item = itemArray[0]
-
-                                return (
-                                    <div className="w-full flex items-center justify-between py-2 border-b border-gray-300 gap-2">
-                                        <img src={placeholderImage} alt="" className="w-1/8" />
-                                        <p className="w-5/8 truncate text-xs px-2 text-blue-500">{item.ProductName}</p>
-                                        <button className="w-1/8 text-xs rounded-full bg-blue-200 p-1 px-2 cursor-pointer hover:bg-blue-100 transition" onClick={() => {handleUnpackItem(item.ID)}}>unpack</button>
-                                        <p className="w-1/8 text-sm text-centered px-6">{item.Quantity}</p>
-                                    </div>
-                                )
-                                
-
-                            })
-                        }
-                    </div>
-                </Card>
-            </div>
-            <div className="w-2/3 flex flex-col items-stretch gap-6 justify-center h-full">
-                <div className="h-1/3 flex items-stretch gap-6 justify-center">
-                    <Card className="w-1/3">
-                        <div className="w-full flex items-center justify-between pb-3">
-                            <h4 className="text-lg font-semibold">Ship to</h4>
-                            <Popup modal trigger={<p className='text-blue-500 cursor-pointer text-sm'>Edit</p>} position="center">
-                            {close => (
-                                <div className="relative">
-                                    <div className={`absolute left-0 top-0 w-full h-full bg-white flex items-center justify-center ${!shipToFormLoading && "hidden"}`}>
-                                        <img src="https://www.uttf.com.ua/assets/images/loader2.gif" alt="" />
-                                    </div>
-                                    <div className="px-8">
-                                        <div className="w-full flex items-center justify-between my-4">
-                                            <h3 className="text-2xl">Shipping Information</h3>
-                                            <button className="close text-3xl" onClick={close}>
-                                                &times;
-                                            </button>
-                                        </div>
-                                        <form onSubmit={(event) => handleSaveShipToSubmit(event, close)}>
-                                        <div className={`w-full bg-red-400 text-white rounded p-2 flex items-center px-4 ${!shippingFormError && "hidden"}`}>{shippingFormError}</div>
-                                            <div className='mt-8 mb-4 w-full flex items-center justify-between gap-6'>
-                                                <div className="w-full">
-                                                    <label htmlFor="name" className='w-full flex items-center justify-start font-light text-sm mb-2'>Name</label>
-                                                    <input type="text" name='name' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Name} />
-                                                </div>
-                                            </div>
-                                            <div className='mt-4 mb-4 w-full flex items-center justify-between gap-6'>
-                                                <div className="w-1/2">
-                                                    <label htmlFor="company" className='w-full flex items-center justify-start font-light text-sm mb-2'>Company</label>
-                                                    <input type="text" name='company' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Company} />
-                                                </div>
-                                                <div className="w-1/2">
-                                                    <label htmlFor="phone" className='w-full flex items-center justify-start font-light text-sm mb-2'>Phone Number</label>
-                                                    <input type="text" name='phone' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Phone} />
-                                                </div>
-                                            </div>
-                                            <div className='mt-8 mb-4 w-full flex items-center justify-between gap-6'>
-                                                <div className="w-full">
-                                                    <label htmlFor="street1" className='w-full flex items-center justify-start font-light text-sm mb-2'>Address Line 1</label>
-                                                    <input type="text" name='street1' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Street1} />
-                                                </div>
-                                            </div>
-                                            <div className='mt-8 mb-4 w-full flex items-center justify-between gap-6'>
-                                                <div className="w-full">
-                                                    <label htmlFor="street2" className='w-full flex items-center justify-start font-light text-sm mb-2'>Address Line 2</label>
-                                                    <input type="text" name='street2' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Street2} />
-                                                </div>
-                                            </div>
-                                            <div className='mt-4 mb-4 w-full flex items-center justify-between gap-6'>
-                                                <div className="w-1/2">
-                                                    <label htmlFor="city" className='w-full flex items-center justify-start font-light text-sm mb-2'>City</label>
-                                                    <input type="text" name='city' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.City} />
-                                                </div>
-                                                <div className="w-1/2">
-                                                    <label htmlFor="state" className='w-full flex items-center justify-start font-light text-sm mb-2'>State</label>
-                                                    <input type="text" name='state' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.State} />
-                                                </div>
-                                            </div>
-                                            <div className='mt-4 mb-4 w-full flex items-center justify-between gap-6'>
-                                                <div className="w-1/2">
-                                                    <label htmlFor="country" className='w-full flex items-center justify-start font-light text-sm mb-2'>Country</label>
-                                                    <input type="text" name='country' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Country} />
-                                                </div>
-                                                <div className="w-1/2">
-                                                    <label htmlFor="zip" className='w-full flex items-center justify-start font-light text-sm mb-2'>Zip Code</label>
-                                                    <input type="text" name='zip' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.PostalCode} />
-                                                </div>
-                                            </div>
-                                            <div className="my-4 w-full flex items-center justify-end">
-                                                <button className="bg-white text-black font-extralight p-2 px-6 rounded hover:bg-gray-200 cursor-pointer transition duration-300 mx-2" onClick={close}>
-                                                    Cancel
-                                                </button>
-                                                <input type='submit' className="bg-blue-500 hover:bg-blue-400 rounded text-white p-2 font-extralight transition duration-300 px-10 cursor-pointer" value="Save" />
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            )}
-                            </Popup>
+                                })
+                            }
                         </div>
-                        <p className="font-semibold text-sm">{order.ShipTo.Name}</p>
-                        <p className="text-sm">{order.ShipTo.Street1}</p>
-                        {order.ShipTo.Street2 && (<p className="text-sm">{order.ShipTo.Street2}</p>)}
-                        {order.ShipTo.Street3 && (<p className="text-sm">{order.ShipTo.Street3}</p>)}
-                        <p className="text-sm">{order.ShipTo.City}, {order.ShipTo.State}, {order.ShipTo.PostalCode}</p>
-                    </Card>
-                    <Card className={`${ order.InternalNotes ? "w-1/5" : "w-1/3"}`}>
-                        <div className="w-full flex items-center justify-between pb-3">
-                            <h4 className="text-lg font-semibold">Shipping Method</h4>
-                            <Popup modal onOpen={handlePopulateShippingRates} trigger={<p className='text-blue-500 cursor-pointer text-sm'>View Rates</p>} position="center">
-                            {close => (
-                                <div className="relative">
-                                    <div className={`absolute left-0 top-0 w-full h-full bg-white flex items-center justify-center ${!shippingRatesPopupLoading && "hidden"}`}>
-                                        <img src="https://www.uttf.com.ua/assets/images/loader2.gif" alt="" />
-                                    </div>
-                                    <div className="px-8 py-4">
-                                        <div className="w-full flex items-center justify-between py-3 border-b border-gray-300">
-                                            <h3 className="text-2xl">Shipping Rates</h3>
-                                            <button className="close text-3xl" onClick={close}>
-                                                &times;
-                                            </button>
-                                        </div>
-                                        <div className={`w-full bg-red-400 text-white rounded p-2 flex items-center px-4 ${!shippingRatesError && "hidden"}`}>{shippingRatesError}</div>
-                                        {shippingRates && (
-                                        <div className="overflow-scroll h-4/5">
-                                            {
-                                                Object.entries(shippingRates).map((rates, key) => {
-                                                    return (
-                                                    <>
-                                                        <div className="w-full py-4 border-b border-gray-300">
-                                                        <h3 className="text-lg font-semibold">{rates[0]}</h3>
-                                                        </div>
-                                                        {
-                                                            rates[1].map(rate => {
-                                                                return (
-                                                                <div onClick={() => handleRateClick({object_id: rate.object_id, carrier: rate.provider, method: rate.servicelevel.token})} className={`w-full py-4 border-b border-gray-300 flex items-center justify-between hover:bg-blue-100 transition duration-300 px-2 ${selectedRate.object_id === rate.object_id ? "bg-blue-100" : "cursor-pointer"}`}>
-                                                                    <div>
-                                                                        <h5 className='text-gray-600'>{rate.servicelevel.name}</h5>
-                                                                    </div>
-                                                                    <p>${rate.amount}</p>
-                                                                </div>
-                                                                )
-                                                            })
-                                                        }
-                                                        
-                                                    </>
-                                                )
-                                                })
-                                            }
-                                        </div>
-                                        )}
-                                        <div className="w-full flex items-center justify-end px-4 my-4 gap-2">
-                                            <div className="bg-white cursor-pointer text-black font-light px-10 py-3 hover:bg-gray-300 transition duration-300 rounded" onClick={close}>Cancel</div>
-                                            <div className="bg-blue-500 cursor-pointer text-white font-light px-10 py-3 hover:bg-blue-400 transition duration-300 rounded" onClick={() => handleUpdateCarrierMethodSubmit(close)}>Save</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                            </Popup>
-                        </div>
-                        <div className="w-full">
-                            <p className='my-2'><span className="font-semibold">Carrier Method</span>: {order.CarrierToken.toUpperCase()} / {order.MethodToken}</p>
-                            <p className='my-2'><span className="font-semibold">Shipping Service</span>: {order.RequestedShippingService}</p>
-                        </div>
-                    </Card>
-                    { order.InternalNotes && (
-                    <Card className="w-1/5 border-2 border-red-500">
-                        {/* display internal notes */}
-                        <h4 className="text-lg font-semibold">Internal Notes</h4>
-                        <p className="my-2">
-                            {order.InternalNotes}
-                        </p>
-
-                    </Card>
-                    ) }
-                    <Card className={`${ order.InternalNotes ? "w-1/5" : "w-1/3"}`}>
-                        <div className="w-full flex items-center justify-between pb-3">
-                            <h4 className="text-lg font-semibold">Weight</h4>
-                            <Popup modal trigger={<p className='text-blue-500 cursor-pointer text-sm'>Edit</p>} position="center">
-                            {close => (
-                                <div className="relative">
-                                    <div className="px-8">
-                                        <div className="w-full flex items-center justify-between my-4">
-                                            <h3 className="text-2xl">Edit Weight</h3>
-                                            <button className="close text-3xl" onClick={close}>
-                                                &times;
-                                            </button>
-                                        </div>
-                                        <form onSubmit={(event) => { handleEditWeightSubmit(event, close); }}>
-                                            <div className="my-4 w-full">
-                                                    <label htmlFor="weight" className='w-full flex items-center justify-start font-light text-sm mb-2'>Weight</label>
-                                                    <input type="number" name='weight' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={orderWeight} step="0.01"/>
-                                            </div>
-                                            <div className="my-4 w-full flex items-center justify-end">
-                                                <button className="bg-white text-black font-extralight p-2 px-6 rounded hover:bg-gray-200 cursor-pointer transition duration-300 mx-2" onClick={close}>
-                                                    Cancel
-                                                </button>
-                                                <input type='submit' className="bg-blue-500 hover:bg-blue-400 rounded text-white p-2 font-extralight transition duration-300 px-10 cursor-pointer" value="Save" />
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            )}
-                            </Popup>
-                        </div>
-                        <div className="w-full mt-10 text-3xl font-semibold text-blue-500 text-center">{orderWeight}oz</div>
                     </Card>
                 </div>
-                <Card className="h-1/3">
-                    <div className="w-full flex items-center justify-between border-b border-blue-500 pb-2">
-                        <h4 className="text-lg font-semibold">Suggested Box</h4>
+
+                <div className="flex-1 flex flex-col w-2/3 gap-4">
+                    <div className="flex-1 flex gap-4">
+
+                        {/* Ship To Card */}
+                        <Card className="flex-1">
+                            <div className="w-full flex items-center justify-between pb-3">
+                                <h4 className="text-lg font-semibold">Ship to</h4>
+                                <Popup modal trigger={<p className='text-blue-500 cursor-pointer text-sm'>Edit</p>} position="center">
+                                {close => (
+                                    <div className="relative">
+                                        <div className={`absolute left-0 top-0 w-full h-full bg-white flex items-center justify-center ${!shipToFormLoading && "hidden"}`}>
+                                            <img src="https://www.uttf.com.ua/assets/images/loader2.gif" alt="" />
+                                        </div>
+                                        <div className="px-8">
+                                            <div className="w-full flex items-center justify-between my-4">
+                                                <h3 className="text-2xl">Shipping Information</h3>
+                                                <button className="close text-3xl" onClick={close}>
+                                                    &times;
+                                                </button>
+                                            </div>
+                                            <form onSubmit={(event) => handleSaveShipToSubmit(event, close)}>
+                                            <div className={`w-full bg-red-400 text-white rounded p-2 flex items-center px-4 ${!shippingFormError && "hidden"}`}>{shippingFormError}</div>
+                                                <div className='mt-8 mb-4 w-full flex items-center justify-between gap-6'>
+                                                    <div className="w-full">
+                                                        <label htmlFor="name" className='w-full flex items-center justify-start font-light text-sm mb-2'>Name</label>
+                                                        <input type="text" name='name' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Name} />
+                                                    </div>
+                                                </div>
+                                                <div className='mt-4 mb-4 w-full flex items-center justify-between gap-6'>
+                                                    <div className="w-1/2">
+                                                        <label htmlFor="company" className='w-full flex items-center justify-start font-light text-sm mb-2'>Company</label>
+                                                        <input type="text" name='company' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Company} />
+                                                    </div>
+                                                    <div className="w-1/2">
+                                                        <label htmlFor="phone" className='w-full flex items-center justify-start font-light text-sm mb-2'>Phone Number</label>
+                                                        <input type="text" name='phone' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Phone} />
+                                                    </div>
+                                                </div>
+                                                <div className='mt-8 mb-4 w-full flex items-center justify-between gap-6'>
+                                                    <div className="w-full">
+                                                        <label htmlFor="street1" className='w-full flex items-center justify-start font-light text-sm mb-2'>Address Line 1</label>
+                                                        <input type="text" name='street1' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Street1} />
+                                                    </div>
+                                                </div>
+                                                <div className='mt-8 mb-4 w-full flex items-center justify-between gap-6'>
+                                                    <div className="w-full">
+                                                        <label htmlFor="street2" className='w-full flex items-center justify-start font-light text-sm mb-2'>Address Line 2</label>
+                                                        <input type="text" name='street2' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Street2} />
+                                                    </div>
+                                                </div>
+                                                <div className='mt-4 mb-4 w-full flex items-center justify-between gap-6'>
+                                                    <div className="w-1/2">
+                                                        <label htmlFor="city" className='w-full flex items-center justify-start font-light text-sm mb-2'>City</label>
+                                                        <input type="text" name='city' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.City} />
+                                                    </div>
+                                                    <div className="w-1/2">
+                                                        <label htmlFor="state" className='w-full flex items-center justify-start font-light text-sm mb-2'>State</label>
+                                                        <input type="text" name='state' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.State} />
+                                                    </div>
+                                                </div>
+                                                <div className='mt-4 mb-4 w-full flex items-center justify-between gap-6'>
+                                                    <div className="w-1/2">
+                                                        <label htmlFor="country" className='w-full flex items-center justify-start font-light text-sm mb-2'>Country</label>
+                                                        <input type="text" name='country' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.Country} />
+                                                    </div>
+                                                    <div className="w-1/2">
+                                                        <label htmlFor="zip" className='w-full flex items-center justify-start font-light text-sm mb-2'>Zip Code</label>
+                                                        <input type="text" name='zip' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' defaultValue={order.ShipTo.PostalCode} />
+                                                    </div>
+                                                </div>
+                                                <div className="my-4 w-full flex items-center justify-end">
+                                                    <button className="bg-white text-black font-extralight p-2 px-6 rounded hover:bg-gray-200 cursor-pointer transition duration-300 mx-2" onClick={close}>
+                                                        Cancel
+                                                    </button>
+                                                    <input type='submit' className="bg-blue-500 hover:bg-blue-400 rounded text-white p-2 font-extralight transition duration-300 px-10 cursor-pointer" value="Save" />
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                )}
+                                </Popup>
+                            </div>
+                            <p className="font-semibold text-sm">{order.ShipTo.Name}</p>
+                            <p className="text-sm">{order.ShipTo.Street1}</p>
+                            {order.ShipTo.Street2 && (<p className="text-sm">{order.ShipTo.Street2}</p>)}
+                            {order.ShipTo.Street3 && (<p className="text-sm">{order.ShipTo.Street3}</p>)}
+                            <p className="text-sm">{order.ShipTo.City}, {order.ShipTo.State}, {order.ShipTo.PostalCode}</p>
+                        </Card>
+
+                        {/* Shipping Method Card */}
+                        <Card className="flex-1">
+                            <div className="w-full flex items-center justify-between pb-3">
+                                <h4 className="text-lg font-semibold">Shipping Method</h4>
+                                <Popup modal onOpen={handlePopulateShippingRates} trigger={<p className='text-blue-500 cursor-pointer text-sm'>View Rates</p>} position="center">
+                                {close => (
+                                    <div className="relative">
+                                        <div className={`absolute left-0 top-0 w-full h-full bg-white flex items-center justify-center ${!shippingRatesPopupLoading && "hidden"}`}>
+                                            <img src="https://www.uttf.com.ua/assets/images/loader2.gif" alt="" />
+                                        </div>
+                                        <div className="px-8 py-4">
+                                            <div className="w-full flex items-center justify-between py-3 border-b border-gray-300">
+                                                <h3 className="text-2xl">Shipping Rates</h3>
+                                                <button className="close text-3xl" onClick={close}>
+                                                    &times;
+                                                </button>
+                                            </div>
+                                            <div className={`w-full bg-red-400 text-white rounded p-2 flex items-center px-4 ${!shippingRatesError && "hidden"}`}>{shippingRatesError}</div>
+                                            {shippingRates && (
+                                            <div className="overflow-scroll h-4/5">
+                                                {
+                                                    Object.entries(shippingRates).map((rates, key) => {
+                                                        return (
+                                                        <>
+                                                            <div className="w-full py-4 border-b border-gray-300">
+                                                            <h3 className="text-lg font-semibold">{rates[0]}</h3>
+                                                            </div>
+                                                            {
+                                                                rates[1].map(rate => {
+                                                                    return (
+                                                                    <div onClick={() => handleRateClick({object_id: rate.object_id, carrier: rate.provider, method: rate.servicelevel.token})} className={`w-full py-4 border-b border-gray-300 flex items-center justify-between hover:bg-blue-100 transition duration-300 px-2 ${selectedRate.object_id === rate.object_id ? "bg-blue-100" : "cursor-pointer"}`}>
+                                                                        <div>
+                                                                            <h5 className='text-gray-600'>{rate.servicelevel.name}</h5>
+                                                                        </div>
+                                                                        <p>${rate.amount}</p>
+                                                                    </div>
+                                                                    )
+                                                                })
+                                                            }
+                                                            
+                                                        </>
+                                                    )
+                                                    })
+                                                }
+                                            </div>
+                                            )}
+                                            <div className="w-full flex items-center justify-end px-4 my-4 gap-2">
+                                                <div className="bg-white cursor-pointer text-black font-light px-10 py-3 hover:bg-gray-300 transition duration-300 rounded" onClick={close}>Cancel</div>
+                                                <div className="bg-blue-500 cursor-pointer text-white font-light px-10 py-3 hover:bg-blue-400 transition duration-300 rounded" onClick={() => handleUpdateCarrierMethodSubmit(close)}>Save</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                                </Popup>
+                            </div>
+                            <div className="w-full">
+                                <p className='my-2'><span className="font-semibold">Carrier Method</span>: {order.CarrierToken.toUpperCase()} / {order.MethodToken}</p>
+                                <p className='my-2'><span className="font-semibold">Shipping Service</span>: {order.RequestedShippingService}</p>
+                            </div>
+                        </Card>
+
+                        {/* Internal Notes Card */}
+                        { order.InternalNotes && (
+                            <Card className="flex-1 border-2 border-red-500">
+                                <h4 className="text-lg font-semibold">Internal Notes</h4>
+                                <p className="my-2">
+                                    {order.InternalNotes}
+                                </p>
+                            </Card>
+                        )}
+
+                        {/* Edit Weight Card */}
+                        <Card className="flex-1">
+                            <div className="w-full flex items-center justify-between pb-3">
+                                <h4 className="text-lg font-semibold">Weight</h4>
+                                <Popup modal onOpen={() => {weightInputRef.current.focus()}} trigger={<p className='text-blue-500 cursor-pointer text-sm'>Edit</p>} position="center">
+                                {close => (
+                                    <div className="relative">
+                                        <div className="px-8">
+                                            <div className="w-full flex items-center justify-between my-4">
+                                                <h3 className="text-2xl">Edit Weight</h3>
+                                                <button className="close text-3xl" onClick={close}>
+                                                    &times;
+                                                </button>
+                                            </div>
+                                            <form onSubmit={(event) => { handleEditWeightSubmit(event, close); }}>
+                                                <div className="my-4 w-full">
+                                                        <label htmlFor="weight" className='w-full flex items-center justify-start font-light text-sm mb-2'>Weight</label>
+                                                        <input type="number" name='weight' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' ref={weightInputRef} defaultValue={orderWeight} step="0.01" />
+                                                </div>
+                                                <div className="my-4 w-full flex items-center justify-end">
+                                                    <button className="bg-white text-black font-extralight p-2 px-6 rounded hover:bg-gray-200 cursor-pointer transition duration-300 mx-2" onClick={close}>
+                                                        Cancel
+                                                    </button>
+                                                    <input type='submit' className="bg-blue-500 hover:bg-blue-400 rounded text-white p-2 font-extralight transition duration-300 px-10 cursor-pointer" value="Save" />
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                )}
+                                </Popup>
+                            </div>
+                            <div className="w-full mt-10 text-3xl font-semibold text-blue-500 text-center">{orderWeight}oz</div>
+                        </Card>
                     </div>
-                    <div className="pb-2 overflow-scroll h-4/5">
-                        {
-                            order.Boxes.map(function(box){
-                                return (
-                                    <label htmlFor={"box_" + box.ID} className="w-full flex items-center justify-start py-2 border-b border-gray-300 gap-6 cursor-pointer">
-                                        <input onChange={handleBoxSelect} type="checkbox" name={"box_" + box.ID} id={"box_" + box.ID} value={box.ID} checked={box.ID === parseInt(orderBoxID)} className="w-5 h-5" />
-                                        <label htmlFor={"box_" + box.ID} className="text-sm tracking-widest cursor-pointer">{box.Name}</label>
-                                    </label>
-                                )
-                            })
-                        }
-                    </div>
-                </Card>
-                <Card className="h-1/3">
-                    <div className="w-full flex items-center justify-between border-b border-blue-500 pb-2">
-                        <h4 className="text-lg font-semibold">Shipments</h4>
-                    </div>
-                    <div className="relative">
-                        <div className={`absolute left-0 top-28 w-full h-full bg-white flex items-center justify-center ${!shipmentsLoading && "hidden"}`}>
-                            <img src="https://www.uttf.com.ua/assets/images/loader2.gif" alt="" />
+
+                    {/* Box Card */}
+                    <Card className="flex-1" ref={boxContainerRef}>
+                        <div className="w-full flex border-b border-blue-500 pb-2">
+                            <h4 className="text-lg font-semibold">Suggested Box</h4>
                         </div>
-                        <table className={`w-full overflow-scroll ${shipmentsLoading && "hidden"}`}>
-                            <tr className="border-b border-gray-200">
-                                <th className="text-gray-500 text-xs py-2 px-1 text-left">Carrier</th>
-                                <th className="text-gray-500 text-xs py-2 px-1 text-left">Cost</th>
-                                <th className="text-gray-500 text-xs py-2 px-1 text-left">Tracking Number</th>
-                                <th className="text-gray-500 text-xs py-2 px-1 text-left">Service</th>
-                                <th className="text-gray-500 text-xs py-2 px-1 text-center">Status</th>
-                                <th className="text-gray-500 text-xs py-2 px-1 text-right">Actions</th>
-                            </tr>
+                        <div>
                             {
-                                shipments && shipments.map(shipment => {
+                                order.Boxes.map(function(box){
+
+                                    if (orderBoxID) {
+
+                                        if (box.ID !== parseInt(orderBoxID)) {
+                                            return <></>;
+                                        }
+
+                                        return (
+                                            <label htmlFor={"box_" + box.ID} className="w-full flex items-center justify-start py-2 border-b border-gray-300 gap-6 cursor-pointer">
+                                                <input onChange={handleBoxSelect} type="checkbox" name={"box_" + box.ID} id={"box_" + box.ID} value={box.ID} checked={box.ID === parseInt(orderBoxID)} className="w-5 h-5" />
+                                                <label htmlFor={"box_" + box.ID} className="text-sm tracking-widest cursor-pointer">{box.Name}</label>
+                                            </label>
+                                        )
+
+                                    }
+
+                                    if (!box.SuggestedBox) {
+                                        return <></>
+                                    }
+
                                     return (
-                                        <tr className="border-b border-gray-200">
-                                            <td className="py-2 text-left text-sm px-1">{shipment.CarrierCode}</td>
-                                            <td className="py-2 text-left text-sm px-1">{shipment.ShipmentCost}</td>
-                                            <td className="py-2 text-left text-sm px-1 text-blue-500">{shipment.TrackingNumber}</td>
-                                            <td className="py-2 text-left text-sm px-1">{shipment.ServiceCode}</td>
-                                            <td className="py-1 text-center text-sm"> <div className={`rounded-3xl p-1 text-xs ${shipment.Voided ? "bg-red-200 text-red-600" : "bg-green-200 text-green-600"}`}>{shipment.Voided ? "Voided" : "Shipped"}</div> </td>
-                                            <td className="text-sm text-right"> 
-                                                {!shipment.Voided && ( 
-                                                    <Dropdown text="Actions" textColorClass='text-blue-500' className={"justify-end"} >
-                                                            <li className="w-full">
-                                                                <button className="w-full text-black text-left cursor-pointer hover:bg-gray-200 transition duration-300 p-1 px-2 text-xs select-none" onClick={() => handleVoidLabel(shipment.ID)}>Void</button>
-                                                            </li>
-                                                            <li className="w-full">
-                                                                <button className="w-full text-black text-left cursor-pointer hover:bg-gray-200 transition duration-300 p-1 px-2 text-xs select-none" onClick={() => handleViewLabelClick(shipment.ID)}>View Label</button>
-                                                            </li>
-                                                    </Dropdown> 
-                                                )}
-                                            </td>
-                                        </tr>
+                                        <label htmlFor={"box_" + box.ID} className="w-full flex items-center justify-start py-2 border-b border-gray-300 gap-6 cursor-pointer">
+                                            <input onChange={handleBoxSelect} type="checkbox" name={"box_" + box.ID} id={"box_" + box.ID} value={box.ID} checked={box.ID === parseInt(orderBoxID)} className="w-5 h-5" />
+                                            <label htmlFor={"box_" + box.ID} className="text-sm tracking-widest cursor-pointer">{box.Name}</label>
+                                        </label>
                                     )
                                 })
                             }
-                        </table>
-                    </div>
-                </Card>
+                            {
+                                order.Boxes.map(function(box, i){
+
+                                    if (box.ID === parseInt(orderBoxID)) {
+                                        return <></>
+                                    }
+
+
+                                    if (box.SuggestedBox) {
+                                        return <></>
+                                    }
+
+                                    return (
+                                        <label htmlFor={"box_" + box.ID} className="w-full flex items-center justify-start py-2 border-b border-gray-300 gap-6 cursor-pointer">
+                                            <input onChange={handleBoxSelect} type="checkbox" name={"box_" + box.ID} id={"box_" + box.ID} value={box.ID} checked={box.ID === parseInt(orderBoxID)} className="w-5 h-5" />
+                                            <label htmlFor={"box_" + box.ID} className="text-sm tracking-widest cursor-pointer">{box.Name}</label>
+                                        </label>
+                                    )
+                                })
+                            }
+                        </div>
+                    </Card>
+
+                    {/* Shipments Card */}
+                    <Card className="flex-1">
+                        <div className="w-full flex items-center justify-between border-b border-blue-500 pb-2">
+                            <h4 className="text-lg font-semibold">Shipments</h4>
+                        </div>
+                        <div className="relative">
+                            <div className={`absolute left-0 top-28 w-full h-full bg-white flex items-center justify-center ${!shipmentsLoading && "hidden"}`}>
+                                <img src="https://www.uttf.com.ua/assets/images/loader2.gif" alt="" />
+                            </div>
+                            <table className={`w-full overflow-scroll ${shipmentsLoading && "hidden"}`}>
+                                <tr className="border-b border-gray-200">
+                                    <th className="text-gray-500 text-xs py-2 px-1 text-left">Carrier</th>
+                                    <th className="text-gray-500 text-xs py-2 px-1 text-left">Cost</th>
+                                    <th className="text-gray-500 text-xs py-2 px-1 text-left">Tracking Number</th>
+                                    <th className="text-gray-500 text-xs py-2 px-1 text-left">Service</th>
+                                    <th className="text-gray-500 text-xs py-2 px-1 text-center">Status</th>
+                                    <th className="text-gray-500 text-xs py-2 px-1 text-right">Actions</th>
+                                </tr>
+                                {
+                                    shipments && shipments.map(shipment => {
+                                        return (
+                                            <tr className="border-b border-gray-200">
+                                                <td className="py-2 text-left text-sm px-1">{shipment.CarrierCode}</td>
+                                                <td className="py-2 text-left text-sm px-1">{shipment.ShipmentCost}</td>
+                                                <td className="py-2 text-left text-sm px-1 text-blue-500">{shipment.TrackingNumber}</td>
+                                                <td className="py-2 text-left text-sm px-1">{shipment.ServiceCode}</td>
+                                                <td className="py-1 text-center text-sm"> <div className={`rounded-3xl p-1 text-xs ${shipment.Voided ? "bg-red-200 text-red-600" : "bg-green-200 text-green-600"}`}>{shipment.Voided ? "Voided" : "Shipped"}</div> </td>
+                                                <td className="text-sm text-right"> 
+                                                    {!shipment.Voided && ( 
+                                                        <Dropdown text="Actions" textColorClass='text-blue-500' className={"justify-end"} >
+                                                                <li className="w-full">
+                                                                    <button className="w-full text-black text-left cursor-pointer hover:bg-gray-200 transition duration-300 p-1 px-2 text-xs select-none" onClick={() => handleVoidLabel(shipment.ID)}>Void</button>
+                                                                </li>
+                                                                <li className="w-full">
+                                                                    <button className="w-full text-black text-left cursor-pointer hover:bg-gray-200 transition duration-300 p-1 px-2 text-xs select-none" onClick={() => handleViewLabelClick(shipment.ID)}>View Label</button>
+                                                                </li>
+                                                        </Dropdown> 
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })
+                                }
+                            </table>
+                        </div>
+                    </Card>
+                </div>
+            </div>
+
+        {/* Complete Order, Print Label, and Report Error Buttons */}
+        <div className="flex w-full items-center justify-end gap-2">
+                <Popup onClose={() => {setFlaggedError("")}} trigger={<button className="bg-red-500 hover:bg-red-400 transition text-white font-light py-3 px-6 rounded">Flag for Error</button>} modal position="center" >
+                    {close => (
+                        <div className="bg-white rounded-lg p-4">
+                            <h3 className="text-xl font-semibold w-full text-center">Once order is flagged for error, please set it aside</h3>
+                            input for reason flagged for error with label 
+                            <div className='my-4'>
+                                <label htmlFor="reason" className="text-lg">Reason flagged for error</label>
+                                <input onInput={(event) => { setFlaggedError(event.target.value) }} type="text" id="reason" className="w-full p-2 border-2 border-gray-300 rounded-lg" />
+                            </div>
+    
+                            cancel button that closes popup 
+                            <div className="flex justify-end gap-4">
+                                <button onClick={close} className="bg-white border border-gray-200 hover:bg-gray-200 duration-300 transition text-black font-light py-3 px-6 rounded">Cancel</button>
+                                <button onClick={() => { handleFlagForError(order.ID, flaggedError) }} className={`${ flaggedError ? "bg-red-500 hover:bg-red-400" : "bg-red-400 cursor-not-allowed" } transition text-white font-light py-3 px-6 rounded`} disabled={!flaggedError}>Flag For Error</button>
+                            </div>
+                            
+                        </div>
+                    )}
+                </Popup>
+                <button className={`bg-blue-500 px-6 py-3 font-light rounded ${orderWeight > 0 && selectedPrinter.name && !(orderItemsPackedStatus.filter(item => !item.packed)).length ? "cursor-pointer hover:bg-blue-400" : "cursor-not-allowed opacity-70" } text-white transition duration-200`} disabled={`${orderWeight > 0 && selectedPrinter.name && !(orderItemsPackedStatus.filter(item => !item.packed)).length ? "" : true}`} onClick={handlePrintLabel}>Print Label</button>
+                <button className={`bg-blue-500 px-6 py-3 font-light rounded text-white transition duration-200 ${(orderItemsPackedStatus.filter(item => !item.packed)).length || !shipments || (!shipments.filter(shipment => !shipment.Voided).length) ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-blue-400" }`} disabled={`${(orderItemsPackedStatus.filter(item => !item.packed)).length || !shipments || !shipments.filter(shipment => !shipment.Voided).length ? true : ""}`} onClick={handleCompleteOrder} >Complete Order</button>
             </div>
         </div>
-
-        {/* Complete Order and Print Label Buttons */}
-        <div className="flex w-full items-center justify-end gap-2 my-4">
-            {/* red popup button action to flag for error */}
-            <Popup onClose={() => {setFlaggedError("")}} trigger={<button className="bg-red-500 hover:bg-red-400 transition text-white font-light py-3 px-6 rounded">Flag for Error</button>} modal position="center" >
-                {close => (
-                    <div className="bg-white rounded-lg p-4">
-                        <h3 className="text-xl font-semibold w-full text-center">Once order is flagged for error, please set it aside</h3>
-                        {/* input for reason flagged for error with label */}
-                        <div className='my-4'>
-                            <label htmlFor="reason" className="text-lg">Reason flagged for error</label>
-                            <input onInput={(event) => { setFlaggedError(event.target.value) }} type="text" id="reason" className="w-full p-2 border-2 border-gray-300 rounded-lg" />
-                        </div>
-
-                        {/* cancel button that closes popup */}
-                        <div className="flex justify-end gap-4">
-                            <button onClick={close} className="bg-white border border-gray-200 hover:bg-gray-200 duration-300 transition text-black font-light py-3 px-6 rounded">Cancel</button>
-                            <button onClick={() => { handleFlagForError(order.ID, flaggedError) }} className={`${ flaggedError ? "bg-red-500 hover:bg-red-400" : "bg-red-400 cursor-not-allowed" } transition text-white font-light py-3 px-6 rounded`} disabled={!flaggedError}>Flag For Error</button>
-                        </div>
-                        
-                    </div>
-                )}
-            </Popup>
-            <button className={`bg-blue-500 px-6 py-3 font-light rounded ${orderWeight > 0 && selectedPrinter.name && !(orderItemsPackedStatus.filter(item => !item.packed)).length ? "cursor-pointer hover:bg-blue-400" : "cursor-not-allowed opacity-70" } text-white transition duration-200`} disabled={`${orderWeight > 0 && selectedPrinter.name && !(orderItemsPackedStatus.filter(item => !item.packed)).length ? "" : true}`} onClick={handlePrintLabel}>Print Label</button>
-            <button className={`bg-blue-500 px-6 py-3 font-light rounded text-white transition duration-200 ${(orderItemsPackedStatus.filter(item => !item.packed)).length || !shipments || (!shipments.filter(shipment => !shipment.Voided).length) ? "cursor-not-allowed opacity-70" : "cursor-pointer hover:bg-blue-400" }`} disabled={`${(orderItemsPackedStatus.filter(item => !item.packed)).length || !shipments || !shipments.filter(shipment => !shipment.Voided).length ? true : ""}`} onClick={handleCompleteOrder} >Complete Order</button>
-        </div>
-    </div>
-    )
-    
+        )
 }
 
 export default OrderPage

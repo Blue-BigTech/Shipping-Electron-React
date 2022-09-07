@@ -108,8 +108,8 @@ const Layout = ({children, user, setUser}) => {
   }
 
   return (
-    <div className='flex items-strech flex-col h-full'>
-        <div className="bg-blue-500 w-full sticky py-4 px-12 flex items-center justify-between text-white">
+    <div className='flex w-full flex-col h-screen'>
+        <div className="bg-blue-500 w-full py-4 px-12 flex items-center justify-between text-white">
             <img src={logoLight} alt="" width={150} height={75} />
             <Dropdown arrowColorClass='text-white' icon={<i className="bi bi-person-fill text-white"></i>} text={user.Username}>
                 <li className="w-full">
@@ -117,7 +117,7 @@ const Layout = ({children, user, setUser}) => {
                 </li>
           </Dropdown>
         </div>
-        <div className="p-12 md:px-32 grow" style={{backgroundColor: "#F3F5F5"}}>{children}</div>
+        <div className="p-6 px-20 w-full flex flex-1" style={{backgroundColor: "#F3F5F5"}}>{children}</div>
     </div>
   )
 }

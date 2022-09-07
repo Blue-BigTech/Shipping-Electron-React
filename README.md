@@ -1,7 +1,7 @@
 ## Build Instructions
 
 **Make sure all dependices are installed**
-`npm i`
+`npm i --save`
 
 **Mac**
 

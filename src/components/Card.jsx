@@ -1,9 +1,9 @@
 import React from 'react'
 
-const Card = ({children, className}) => {
+const Card = (props, ref) => {
   return (
-    <div className={`${className} rounded-lg bg-white p-4 overflow-scroll`}>{children}</div>
+    <div ref={ref} className={`${props.className} rounded-lg bg-white p-4 overflow-scroll basis-0 grow`}>{props.children}</div>
   )
 }
 
-export default Card
+export default React.forwardRef(Card)

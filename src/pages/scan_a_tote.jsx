@@ -2,7 +2,7 @@
 import React from 'react'
 import Popup from 'reactjs-popup';
 import 'reactjs-popup/dist/index.css';
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom';
 
 // Img Imports
@@ -11,16 +11,58 @@ import computerIconBlueLines from "../images/computerIconBlueLines.png"
 const ScanATotePage = ({ user }) => {
 
     // Init Navigate
-    const navigate = useNavigate();
+    let navigate = useNavigate();
     
     // Component states
     const [formError, setFormError] = useState("");
     const [formLoading, setFormLoading] = useState(true);
 
+    // Input Ref
+    const inputRef = useRef();
+
+    // Set Barcode scan
+    let barcodeScan = "";
+
     // Check if the user already has an order locked
     useEffect(() => {
         getPreviouslyLockedOrder()
     });
+
+    // Listens for and handles barcode scan
+    useEffect(() => {
+
+        // Handles Keydown
+        function handleKeyDown (e) {
+            
+            // If keyCode is 13 (enter) then check if there are barcode scan keys and if there are handle barcode scan
+            if (e.keyCode === 13 && barcodeScan.length > 3) {
+                lockOrder(barcodeScan);
+                return
+            }
+
+            // Skip if pressed key is shift key
+            if (e.keyCode === 16) {
+                return
+            }
+
+            // Push Keycode to barcode scan variable
+            barcodeScan += e.key;
+
+            // Set Timeout to clear state
+            setTimeout(() => {
+                barcodeScan = ""
+            }, 110)
+
+        }
+        
+        // Adds event listener to page for keydown
+        document.addEventListener('keydown', handleKeyDown)
+
+        // Don't forget to clean up
+        return function cleanup() {
+            document.removeEventListener('keydown', handleKeyDown);
+        }
+    }, [])
 
     // Gets previously locked order and redirects to that page
     async function getPreviouslyLockedOrder () {
@@ -48,15 +90,15 @@ const ScanATotePage = ({ user }) => {
         }
 
         // Parse Data
-        const lockedOrder = await res.json();
+        let lockedOrder = await res.json();
 
         // If order is already locked, navigate there
         if (lockedOrder && lockedOrder.ID) {
-            navigate(`/order?order_id=${lockedOrder.ID}`)
+            navigate(`/order?order_id=${lockedOrder.ID}`);
         }
 
         // Turn loading off
-        setFormLoading(false);
+        setFormLoading(false); 
     }
 
     // Lock order and then go to order page
@@ -84,7 +126,7 @@ const ScanATotePage = ({ user }) => {
                 "X-Real-IP": process.env.REACT_APP_HQ_SHIPPING_X_REAL_IP
             },
             body: JSON.stringify({
-                order_id: orderID,
+                order_search_value: orderID.toString(),
                 user_id: user.ID
             })
         })
@@ -105,7 +147,7 @@ const ScanATotePage = ({ user }) => {
         <div className='max-w-2xl mx-auto flex items-center justify-center flex-col text-centered'>
             <h2 className="text-3xl my-4 tracking-wider">Scan a tote</h2>
             <p className="my-4 font-light tracking-wide">or</p>
-            <Popup modal trigger={<button className="bg-blue-500 hover:bg-blue-400 rounded text-white py-3 font-extralight transition duration-300 px-16 text-xl cursor-pointer my-4">Enter an order</button>} position="center">
+            <Popup modal onOpen={() => { inputRef.current.focus() }} trigger={<button className="bg-blue-500 hover:bg-blue-400 rounded text-white py-3 font-extralight transition duration-300 px-16 text-xl cursor-pointer my-4">Enter an order</button>} position="center">
             {close => (
                 <div className="relative">
                     <div className={`absolute left-0 top-0 w-full h-full bg-white flex items-center justify-center ${!formLoading && "hidden"}`}>
@@ -120,12 +162,12 @@ const ScanATotePage = ({ user }) => {
                         </div>
                         <form action="/order" onSubmit={(event) => { 
                             event.preventDefault();
-                            lockOrder(parseInt(event.target.order_id.value));
+                            lockOrder(event.target.order_id.value);
                         }}>
                             <div className={`w-full bg-red-400 text-white rounded p-2 flex items-center px-4 ${!formError && "hidden"}`}>{formError}</div>
                             <div className='mt-8 mb-4 w-full'>
                                 <label htmlFor="order_id" className='w-full flex items-center justify-start font-light text-sm'>Order Number</label>
-                                <input type="text" name='order_id' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' />
+                                <input ref={inputRef} type="text" name='order_id' className='p-2 border border-lightgray rounded-lg w-full focus:outline-none' />
                             </div>
                             <div className="my-4 w-full flex items-center justify-end">
                                 <div className="bg-white text-black font-extralight p-2 px-6 rounded hover:bg-gray-200 cursor-pointer transition duration-300 mx-2" onClick={close}>
