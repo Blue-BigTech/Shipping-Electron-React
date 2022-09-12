@@ -694,7 +694,9 @@ const OrderPage = ({user}) => {
         setLoading(true);
 
         // Unlock Order
-        await postUnlockOrder(order.ID);
+        if (order && order.ID) {
+            await postUnlockOrder(order.ID);
+        }
 
         // Navigate back to tote page
         navigate("/scan")
