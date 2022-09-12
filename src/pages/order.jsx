@@ -93,7 +93,7 @@ const OrderPage = ({user}) => {
             
             // Set Order into state
             if (!fetchedOrder && !orderError) {
-                setOrderError("Uh oh, an error has occured while fetching the order. Try again later.")
+                setOrderError("An error has occured while fetching the order. Try again later.")
                 return;
             }
             setOrder(fetchedOrder);
@@ -101,6 +101,12 @@ const OrderPage = ({user}) => {
 
             // Set shipments into state
             setShipments(fetchedShipments);
+
+            // Weight Validation
+            if (!fetchedOrder.EstimatedWeight || fetchedOrder.EstimatedWeight === "0") {
+                setOrderError("This order doesn't have a weight. Please set in the error bin, and notify Brian.")
+                return
+            }
 
             // SET DATA INTO STATES AFTER FETCHING
 
@@ -214,7 +220,7 @@ const OrderPage = ({user}) => {
 
         // Error Handle validation
         if (!orderID) {
-            setOrderError("Uh oh, you cannot fetch an order without the parameter orderID.")
+            setOrderError("You cannot fetch an order without the parameter orderID.")
             return;
         }
 
@@ -252,7 +258,7 @@ const OrderPage = ({user}) => {
         
         // Validate orderID parameter
         if (!orderID) {
-            setOrderError("Uh oh, unable to fetch shipments without an orderID parameter");
+            setOrderError("Unable to fetch shipments without an orderID parameter");
             return;
         }
 
@@ -312,19 +318,19 @@ const OrderPage = ({user}) => {
 
         // orderID
         if (!orderID) {
-            alert("Uh oh, unable to fetch shipping rates without orderID parameter.");
+            alert("Unable to fetch shipping rates without orderID parameter.");
             return;
         }
 
         // orderWeightToFetch
         if (!orderWeightToFetch) {
-            alert("Uh oh, unable to fetch shipping rates without orderWeightToFetch parameter.");
+            alert("Unable to fetch shipping rates without orderWeightToFetch parameter.");
             return;
         }
 
         // orderBoxIDToFetch
         if (!orderBoxIDToFetch) {
-            alert("Uh oh, unable to fetch shipping rates without orderBoxIDToFetch parameter.");
+            alert("Unable to fetch shipping rates without orderBoxIDToFetch parameter.");
             return;
         }
 
@@ -361,7 +367,7 @@ const OrderPage = ({user}) => {
 
         // Order ID parameter validation
         if (!orderID) {
-            setOrderError("Uh oh, unable to unlock order without orderID parameter.");
+            setOrderError("Unable to unlock order without orderID parameter.");
             return;
         }
 
@@ -394,7 +400,7 @@ const OrderPage = ({user}) => {
 
         // Parameter Validation
         if (!shipmentID) {
-            setOrderError("Uh oh, unable to view fetch an existing label without a shipmentID");
+            setOrderError("Unable to view fetch an existing label without a shipmentID");
             return;
         }
 
@@ -450,19 +456,19 @@ const OrderPage = ({user}) => {
         
         // orderID
         if (!orderID) {
-            setShippingRatesError("Uh oh, unable to update carrier method without orderID parameter.");
+            setShippingRatesError("Unable to update carrier method without orderID parameter.");
             return;
         }
 
         // selectedCarrier
         if (!selectedCarrier) {
-            setShippingRatesError("Uh oh, unable to update carrier method without selectedCarrier parameter.");
+            setShippingRatesError("Unable to update carrier method without selectedCarrier parameter.");
             return;
         }
 
         // selectedMethod
         if (!selectedMethod) {
-            setShippingRatesError("Uh oh, unable to update carrier method without selectedMethod parameter.");
+            setShippingRatesError("Unable to update carrier method without selectedMethod parameter.");
             return;
         }
 
@@ -497,7 +503,7 @@ const OrderPage = ({user}) => {
 
         // Parameter Validation
         if (!shipmentID) {
-            alert("Uh oh, unable to void label without parameter shipmentID");
+            alert("Unable to void label without parameter shipmentID");
             return;
         }
 
@@ -530,25 +536,25 @@ const OrderPage = ({user}) => {
 
         // orderID
         if (!orderID) {
-            alert("Uh oh, unable to purchase label without orderID parameter.");
+            alert("Unable to purchase label without orderID parameter.");
             return;
         }
 
         // weight
         if (!weight) {
-            alert("Uh oh, unable to purchase label without weight parameter.");
+            alert("Unable to purchase label without weight parameter.");
             return;
         }
 
         // boxID
         if (!boxID) {
-            alert("Uh oh, unable to purchase label without boxID parameter.");
+            alert("Unable to purchase label without boxID parameter.");
             return;
         }
 
         // userID
         if (!userID) {
-            alert("Uh oh, unable to purchase label without userID parameter.");
+            alert("Unable to purchase label without userID parameter.");
             return;
         }
 
@@ -588,12 +594,12 @@ const OrderPage = ({user}) => {
         
         // Parameter Validation
         if (!orderID) {
-            alert("Uh oh, unable to flag error without orderID parameter.");
+            alert("Unable to flag error without orderID parameter.");
             return;
         }
 
         if (!errorMessage) {
-            alert("Uh oh, unable to flag error without errorMessage parameter.");
+            alert("Unable to flag error without errorMessage parameter.");
             return;
         }
 
@@ -1043,7 +1049,7 @@ const OrderPage = ({user}) => {
     // Show order error screen
     if (orderError) {
         return (
-            <Error message={orderError} linkText="Go back to Tote page" linkPath="/scan"></Error>
+            <Error message={orderError} onClick={handleBackToTotePageClick} buttonText="Go back to Tote page" linkPath="/scan"></Error>
         )
     }
 
@@ -1159,12 +1165,12 @@ const OrderPage = ({user}) => {
                                 <h4 className="text-lg font-semibold">Ship to</h4>
                                 <Popup modal trigger={<p className='text-blue-500 cursor-pointer text-sm'>Edit</p>} position="center">
                                 {close => (
-                                    <div className="relative">
+                                    <div className="relative" style={{ maxHeight: "90vh" }}>
                                         <div className={`absolute left-0 top-0 w-full h-full bg-white flex items-center justify-center ${!shipToFormLoading && "hidden"}`}>
                                             <img src={loader} alt="" />
                                         </div>
                                         <div className="px-8">
-                                            <div className="w-full flex items-center justify-between my-4">
+                                            <div className="w-full flex items-center justify-between my-4 border-b border-black py-2">
                                                 <h3 className="text-2xl">Shipping Information</h3>
                                                 <button className="close text-3xl" onClick={close}>
                                                     &times;
@@ -1246,20 +1252,20 @@ const OrderPage = ({user}) => {
                                 <p className='text-blue-500 cursor-pointer text-sm' onClick={handlePopulateShippingRates}>View Rates</p>
                                 <Popup modal open={shippingRatesPopupOpen} onClose={() => {setShippingRatesPopupOpen(false)}} position="center">
                                 {close => (
-                                    <div className="relative">
-                                        <div className={`absolute left-0 top-0 w-full h-full bg-white flex items-center justify-center ${!shippingRatesPopupLoading && "hidden"}`}>
-                                            <img src={loader} alt="" />
-                                        </div>
-                                        <div className="px-8 py-4">
-                                            <div className="w-full flex items-center justify-between py-3 border-b border-gray-300">
-                                                <h3 className="text-2xl">Shipping Rates</h3>
+                                    <div className="relative p-4 flex flex-col" style={{ maxHeight: "90vh" }}>
+                                            <div className={`absolute left-0 top-0 w-full h-full bg-white flex items-center justify-center ${!shippingRatesPopupLoading && "hidden"}`}>
+                                                <img src={loader} alt="" />
+                                            </div>
+                                        
+                                            <div className="w-full flex items-center justify-between py-3 border-b border-black">
+                                                <h3 className="text-2xl font-semibold">Shipping Rates</h3>
                                                 <button className="close text-3xl" onClick={close}>
                                                     &times;
                                                 </button>
                                             </div>
                                             <div className={`w-full bg-red-400 text-white rounded p-2 flex items-center px-4 ${!shippingRatesError && "hidden"}`}>{shippingRatesError}</div>
                                             {shippingRates && (
-                                            <div className="overflow-scroll h-4/5">
+                                            <div className="overflow-scroll">
                                                 {
                                                     Object.entries(shippingRates).map((rates, key) => {
                                                         return (
@@ -1290,7 +1296,7 @@ const OrderPage = ({user}) => {
                                                 <div className="bg-white cursor-pointer text-black font-light px-10 py-3 hover:bg-gray-300 transition duration-300 rounded" onClick={close}>Cancel</div>
                                                 <div className="bg-blue-500 cursor-pointer text-white font-light px-10 py-3 hover:bg-blue-400 transition duration-300 rounded" onClick={() => handleUpdateCarrierMethodSubmit(close)}>Save</div>
                                             </div>
-                                        </div>
+                                        
                                     </div>
                                 )}
                                 </Popup>
@@ -1317,7 +1323,7 @@ const OrderPage = ({user}) => {
                                 <h4 className="text-lg font-semibold">Weight</h4>
                                 <Popup modal onOpen={() => {weightInputRef.current.focus()}} trigger={<p className='text-blue-500 cursor-pointer text-sm'>Edit</p>} position="center">
                                 {close => (
-                                    <div className="relative">
+                                    <div className="relative" style={{ maxHeight: "90vh" }}>
                                         <div className="px-8">
                                             <div className="w-full flex items-center justify-between my-4">
                                                 <h3 className="text-2xl">Edit Weight</h3>
@@ -1390,7 +1396,7 @@ const OrderPage = ({user}) => {
                                     }
 
 
-                                    if (box.SuggestedBox) {
+                                    if (box.SuggestedBox && !orderBoxID) {
                                         return <></>
                                     }
 
@@ -1458,7 +1464,7 @@ const OrderPage = ({user}) => {
         <div className="flex w-full items-center justify-end gap-2">
                 <Popup onClose={() => {setFlaggedError("")}} trigger={<button className="bg-red-500 hover:bg-red-400 transition text-white font-light py-3 px-6 rounded">Flag for Error</button>} modal position="center" >
                     {close => (
-                        <div className="bg-white rounded-lg p-4">
+                        <div className="bg-white rounded-lg p-4" style={{ maxHeight: "90vh" }}>
                             <h3 className="text-xl font-semibold w-full text-center">Once order is flagged for error, please set it aside</h3>
                             
                             <div className='my-4'>
@@ -1468,7 +1474,7 @@ const OrderPage = ({user}) => {
     
                             
                             <div className="flex justify-end gap-4">
-                                <button onClick={close} className="bg-white border border-gray-200 hover:bg-gray-200 duration-300 transition text-black font-light py-3 px-6 rounded">Cancel</button>
+                                <button onClick={close} className="bg-white hover:bg-gray-200 duration-300 transition text-black font-light py-3 px-6 rounded">Cancel</button>
                                 <button onClick={() => { handleFlagForError(order.ID, flaggedError) }} className={`${ flaggedError ? "bg-red-500 hover:bg-red-400" : "bg-red-400 cursor-not-allowed" } transition text-white font-light py-3 px-6 rounded`} disabled={!flaggedError}>Flag For Error</button>
                             </div>
                             

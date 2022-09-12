@@ -6,8 +6,7 @@ import { useState } from "react";
 import {
   HashRouter as Router,
   Routes,
-  Route,
-  Navigate
+  Route
 } from "react-router-dom";
 
 
@@ -23,11 +22,6 @@ import Layout from "./components/Layout";
 function App() {
 
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
-
-  // If user in local storage then set that user
-  // if (localStorage.getItem("user") && !user) {
-  //   setUser(JSON.parse(localStorage.getItem("user")))
-  // }
 
   if (!user) {
     return <Router><SignInPage setUser={setUser} /></Router>

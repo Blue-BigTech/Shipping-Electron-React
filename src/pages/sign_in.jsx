@@ -12,6 +12,7 @@ const SignInPage = ({ setUser }) => {
     // Component States
     const [loginFormError, setLoginFormError] = useState("");
     const [buttonLoading, setButtonLoading] = useState(false);
+    const [passwordShowing, setPasswordShowing] = useState(false);
 
     // Init Navigate
     const navigate = useNavigate();
@@ -65,6 +66,11 @@ const SignInPage = ({ setUser }) => {
 
     }
 
+    // Handles toggle password showing
+    const togglePasswordShowing = () => {
+        setPasswordShowing(!passwordShowing)
+    }
+
     return (
     <div className='relative w-screen h-screen'>
         <div className="w-full h-full">
@@ -73,7 +79,13 @@ const SignInPage = ({ setUser }) => {
                 <h3 className="text-3xl w-full font-semibold">Sign In</h3>
                 <ul className={`list-none bg-red-400 text-white p-3 rounded w-full my-2 ${!loginFormError && "hidden" }`}>{loginFormError}</ul>
                 <input type="text" className="w-96 my-8 border-b border-black h-8 p-1 py-4 focus:outline-none block" placeholder='Username' name='username' />
-                <input type="text" className="w-96 my-8 border-b border-black h-8 p-1 py-4 focus:outline-none block" placeholder='Password' name='password' />
+                
+                <div className='w-full flex items-center justify-between w-96 my-8 border-b border-black h-8 p-1 py-4'>
+                    <input type={passwordShowing ? "text" : "password"} className="block flex-1 focus:outline-none h-8" placeholder='Password' name='password' />
+                    {/* eyeball toggle */}
+                    <i onClick={togglePasswordShowing} className={`cursor-pointer bi ${ passwordShowing ? "bi-eye" : "bi-eye-slash" }`}></i>
+                </div>
+
                 <button type="submit" className="bg-blue-500 hover:bg-blue-400 cursor-pointer rounded py-2 w-96 flex items-center justify-center my-4 text-white font-light transition duration-300" disabled={buttonLoading}>
                     {buttonLoading ? (<img src="https://www.ekathimerini.com/wp-content/themes/nxtheme/images/loading.gif" className='h-6' alt="loading" />) : "Sign In"}
                 </button>

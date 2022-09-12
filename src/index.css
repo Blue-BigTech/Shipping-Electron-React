@@ -40,3 +40,5 @@ background-color: rgb(59 130 246);
 label input:checked+span:after {
     opacity: 1;
   }
+
+  
