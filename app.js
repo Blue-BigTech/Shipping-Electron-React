@@ -9,7 +9,7 @@ const windowsPrint = require("pdf-to-printer");
 
 // Electron Imports
 const { app, BrowserWindow, ipcMain } = require('electron');
-const isDev = true;
+const isDev = false;
 
 // Create window once Electron has been initialized
 app.whenReady().then(createWindow);

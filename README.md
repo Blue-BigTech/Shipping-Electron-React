@@ -13,7 +13,7 @@
 5. run package for darwin command
    `electron-packager . --overwrite --platform=darwin --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds`
 6. packed application into dist folder
-   `./node_modules/.bin/electron-builder --prepackaged ./release-builds/shipping-darwin-x64`
+   `./node_modules/.bin/electron-builder --prepackaged ./release-builds/HoopSwagg\ Shipping-darwin-x64`
 7. final packaged dmg executable will be in dist folder
 
 **Windows**

@@ -1049,7 +1049,7 @@ const OrderPage = ({user}) => {
     // Show order error screen
     if (orderError) {
         return (
-            <Error message={orderError} onClick={handleBackToTotePageClick} buttonText="Go back to Tote page" linkPath="/scan"></Error>
+            <Error message={orderError} onClick={handleBackToTotePageClick} buttonText="Go back to Tote page"></Error>
         )
     }
 
