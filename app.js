@@ -1,6 +1,7 @@
 // Node Imports
 const path = require('path');
 const fs = require("fs")
+const url = require('url');
 
 // PDF Printing Imports
 const { download } = require('electron-dl');
@@ -43,11 +44,26 @@ function createWindow() {
   win.maximize();
 
   // Load in correct page
+
+  if (process.platform === 'darwin') {
   win.loadURL(
     isDev
       ? 'http://localhost:3000/scan'
       : `file://${path.join(__dirname, 'build/index.html#/scan')}`
   );
+  } else if (process.platform === 'win32') {
+    win.loadURL(
+      isDev
+        ? 'http://localhost:3000/scan'
+        : url.format({
+          pathname: path.join(__dirname,`build/index.html`),
+          protocol:'file',
+          slashes:true,
+          hash:`#/scan`
+        })
+ 
+    );
+  }
 
 
   // EVENT LISTENERS
