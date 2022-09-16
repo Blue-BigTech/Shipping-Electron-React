@@ -1,3 +1,4 @@
+workflows:
   windows-build:
     name: Windows Build
     instance_type: windows_x2
