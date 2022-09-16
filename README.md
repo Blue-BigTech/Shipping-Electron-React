@@ -26,3 +26,10 @@
 5. run package for win32 command
    `electron-packager . --overwrite --platform=win32 --arch=x64 --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds`
 6. folder is large, and will take a while to move, but move the folder ./release-builds/shipping-win32-x64 to the PC
+
+**electron-builder on Windows**
+
+1. copy app.js to build/app.js
+2. rename app.js to electron.js
+3. change path of index.html in electron.js
+4. npm run electron:package:win

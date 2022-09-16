@@ -33,7 +33,7 @@
   "resolutions": {
     "react-error-overlay": "6.0.9"
   },
-  "main": "app.js",
+  "main": "./build/electron.js",
   "homepage": "./",
   "scripts": {
     "start": "react-scripts start",
@@ -48,7 +48,7 @@
     "make": "electron-forge make",
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
-    "electron:package:win": "yarn build && electron-builder -w -c.extraMetadata.main=app.js"
+    "electron:package:win": "electron-builder -w -c.extraMetadata.main=build/electron.js"
   },
   "postinstall": "electron-builder install-app-deps",
   "eslintConfig": {
@@ -86,6 +86,26 @@
     "postcss": "^8.4.14",
     "tailwindcss": "^3.1.4",
     "wait-on": "^6.0.1"
+  },
+  "build": {
+    "win": {
+      "publish": {
+          "provider": "github",
+          "owner": "BlueBigTech",
+          "repo": "Shipping",
+          "private": true,
+          "token": ""
+      }
+    },
+    "files": [
+        "build/**/*",
+        "node_modules/**/*"
+    ],
+    "publish": {
+        "provider": "github",
+        "private": true,
+        "owner": "BlueBigTech"
+    }
   },
   "config": {
     "forge": {
