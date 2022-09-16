@@ -47,7 +47,8 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "electron:package:win": "yarn build && electron-builder -w -c.extraMetadata.main=app.js"
   },
   "postinstall": "electron-builder install-app-deps",
   "eslintConfig": {
@@ -86,13 +87,6 @@
     "tailwindcss": "^3.1.4",
     "wait-on": "^6.0.1"
   },
-  "build": {
-    "extends": null,
-    "appId": "your.id",
-    "mac": {
-      "category": "your.app.category.type"
-    }
-  },
   "config": {
     "forge": {
       "packagerConfig": {},
@@ -100,15 +94,13 @@
         {
           "name": "@electron-forge/maker-squirrel",
           "config": {
-            "name": "shipping",
-            "authors": "Brady Agranoff",
-            "exe": "shipping.exe"
+            "name": "shipping"
           }
         },
         {
           "name": "@electron-forge/maker-zip",
           "platforms": [
-            "darwin"
+            "win32"
           ]
         },
         {

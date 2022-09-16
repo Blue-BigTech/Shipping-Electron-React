@@ -1,0 +1,18 @@
+  windows-build:
+    name: Windows Build
+    instance_type: windows_x2
+    environment:
+      groups:
+        - prod   
+      node: 16.15.0
+  
+    scripts:
+      - name: Installing packages
+        script: npm install
+      - name: Building Applications
+        script: npm run make
+
+    artifacts:
+      - out/make/squirrel.windows/x64/*exe
+      - out/make/squirrel.windows/x64/*nupkg
+      - out/make/zip/win32/x64/*.zip
